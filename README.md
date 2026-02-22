@@ -7,25 +7,32 @@
 Self-hosted, private, always-on. Talk to your agent via WhatsApp or the built-in UI.
 It learns, remembers, and acts proactively on your behalf.
 
-[English](#user-guide) | [Deutsch](#bedienungsanleitung)
+[English](#quick-start) | [Deutsch](#schnellstart)
 
 </div>
 
 ---
 
-# User Guide
+# Quick Start
 
-## Prerequisites
+Get up and running in 3 steps.
 
-- An [Anthropic API key](https://console.anthropic.com/) (set as `ANTHROPIC_API_KEY` environment variable)
-- [Claude Code CLI](https://docs.anthropic.com/en/docs/claude-code) installed and authenticated
-- WhatsApp account (optional — for mobile access)
+## 1. Install Claude Code
 
-## Installation
+miniMe needs [Claude Code](https://docs.anthropic.com/en/docs/claude-code) installed on your machine.
 
-Download the latest release for your platform:
+```bash
+npm install -g @anthropic-ai/claude-code
+claude  # follow the auth flow
+```
 
-- **Windows**: `minime-x.x.x-setup.exe` (NSIS installer)
+Make sure your [Anthropic API key](https://console.anthropic.com/) is set as `ANTHROPIC_API_KEY` environment variable, or that you're authenticated via Claude Code's built-in auth.
+
+## 2. Install miniMe
+
+Download the latest release:
+
+- **Windows**: `minime-x.x.x-setup.exe`
 - **Linux**: `minime-x.x.x-x64.AppImage` or `.deb`
 
 Or build from source:
@@ -36,148 +43,105 @@ npm install
 npm run build:win    # or build:linux
 ```
 
-## First Start
+On first launch, choose your language (Deutsch / English). This sets the agent's personality, memory structure, and communication style.
 
-On the very first launch, the workspace is empty and a **language dialog** appears:
-
-1. Choose **Deutsch** or **English** — this sets the language for all agent templates (identity, memory structure, skills)
-2. The workspace is created with your chosen language
-3. This choice is permanent — to change it later, use the Workspace Reset in the Danger Zone
-
-> The language setting controls the agent's internal templates and communication style. It does **not** affect the UI (which is always in English).
-
-## Sessions
+## 3. Connect WhatsApp
 
 <p align="center">
-  <img src="docs/screenshots/sessions-chat.png" width="700" alt="Sessions view" />
+  <img src="docs/screenshots/whatsapp.png" width="700" alt="miniMe WhatsApp page — click Connect" />
 </p>
 
-The Sessions tab is where you interact with your agent.
+Click **Connect** in the WhatsApp tab. A QR code appears in the app.
 
-- **+ New** creates a new conversation
-- Messages from WhatsApp and the UI appear in the same timeline
-- The header shows: status (Active/Closed), start time, duration, and accumulated cost
-- **Terminal** opens Claude Code in a separate terminal for the same session
-- **Code** opens VS Code in the session's working directory
-- **Files** opens the workspace folder
-
-### Permission Requests
+On your phone, open **WhatsApp** > **Linked Devices** > **Link a Device** and scan the QR code:
 
 <p align="center">
-  <img src="docs/screenshots/permission-request.png" width="700" alt="Permission request" />
+  <img src="docs/screenshots/whatsapp-linked-devices.jpg" width="250" alt="WhatsApp — Link a Device" />
+  &nbsp;&nbsp;
+  <img src="docs/screenshots/whatsapp-qr-login.jpg" width="250" alt="Scan QR code" />
+  &nbsp;&nbsp;
+  <img src="docs/screenshots/whatsapp-linked-devices-connected.jpg" width="250" alt="miniMe connected" />
 </p>
 
-When the agent wants to use a tool (e.g. WebSearch, file edits, bash commands), a permission prompt appears:
-
-- **Allow** — approve this specific action
-- **Deny** — block this action, agent will try an alternative
-
-The orange badge on the Sessions icon in the sidebar indicates a pending permission. To avoid constant prompts, change the Permission Mode in Settings.
-
-## WhatsApp
+Once connected, **miniMe** appears as a linked device. You're ready to go — just send a message.
 
 <p align="center">
-  <img src="docs/screenshots/whatsapp.png" width="700" alt="WhatsApp page" />
+  <img src="docs/screenshots/whatsapp-agent-response.jpg" width="300" alt="Agent responding via WhatsApp" />
 </p>
 
-1. Click **Connect** — a QR code appears
-2. Open WhatsApp on your phone → Linked Devices → Link a Device
-3. Scan the QR code
-4. Once connected, the status bar shows **Connected** in green
+---
 
-Now you can message the agent from your phone. It will respond autonomously. The **Response Mode** in Settings controls how:
+# What You Can Do
 
-| Mode | Behavior |
-|------|----------|
-| **sendMessage** | Agent decides what to send via the MCP tool — more deliberate |
-| **Streaming** | All assistant text is forwarded immediately as it's generated |
+## Chat from Anywhere
 
-### Contacts
-
-Add contacts on the WhatsApp page so the agent knows who it's talking to. Mark one contact as **Owner** — that's you. The agent uses this for its user profile.
-
-## Settings
+Send a message via WhatsApp or the built-in Sessions UI — they share the same conversation. The agent uses Claude Code under the hood, so it can search the web, read/write files, run commands, and more.
 
 <p align="center">
-  <img src="docs/screenshots/settings.png" width="700" alt="Settings page" />
+  <img src="docs/screenshots/sessions-chat.png" width="700" alt="Sessions — chat view" />
 </p>
 
-### Agent
+## Control Permissions
 
-| Setting | Options | What it does |
-|---------|---------|-------------|
-| **Permission Mode** | Ask, Accept Edits, Bypass, Plan | Controls how much autonomy the agent has |
-| **Model** | Default, Sonnet, Haiku | Which Claude model to use |
+When the agent wants to use a tool, it asks for permission. You can approve or deny from **WhatsApp** or from the **UI** — whichever is more convenient.
 
-**Permission Modes explained:**
+<p align="center">
+  <img src="docs/screenshots/whatsapp-permission-flow.jpg" width="250" alt="Permission request on WhatsApp" />
+  &nbsp;&nbsp;
+  <img src="docs/screenshots/whatsapp-permission-approve.jpg" width="250" alt="Approve permission on WhatsApp" />
+</p>
 
-| Mode | Description |
-|------|-------------|
-| **Ask** | Agent asks before every tool call — maximum control |
-| **Accept Edits** | File edits are auto-approved, everything else asks |
+<p align="center">
+  <img src="docs/screenshots/permission-request.png" width="700" alt="Permission request in the UI" />
+</p>
+
+Don't want to approve every action? Change the **Permission Mode** in Settings:
+
+| Mode | What it means |
+|------|--------------|
+| **Ask** | Agent asks before every tool use — full control |
+| **Accept Edits** | File edits are auto-approved, other tools ask |
 | **Bypass** | Fully autonomous — no prompts at all |
-| **Plan** | Read-only analysis mode — agent can only read, not modify |
+| **Plan** | Read-only mode — agent can only read, not modify |
 
-### WhatsApp
+Set it to **Bypass** and the agent works completely on its own. Set it to **Ask** when you want to stay in the loop.
 
-| Setting | What it does |
-|---------|-------------|
-| **Auto-Connect** | Automatically connect WhatsApp when the app starts |
-| **Response Mode** | sendMessage (deliberate) or Streaming (real-time) |
+## Continue Locally
 
-### Application
+Every session has a working directory and a session ID. You can pick up the same session on your local machine:
 
-| Setting | What it does |
-|---------|-------------|
-| **Minimize to Tray** | Close button hides to system tray instead of quitting |
-| **Start with System** | Launch automatically on login |
-| **Use Git** | Track workspace and project changes with git |
-| **Version** | Current version + check for updates |
-| **Workspace** | Path to the workspace folder (click to copy, Open to browse) |
+- **Terminal** — opens Claude Code in a terminal, resuming the exact same session
+- **Code** — opens VS Code in the session's working directory
+- **Files** — opens the workspace folder
 
-## Scheduler
+This means you can start a task from your phone via WhatsApp, then sit down at your PC and continue in VS Code or Claude Code with full context.
+
+## Link Projects
+
+Go to **Projects** > **+ Project** and select any folder on your machine. The agent can then access it — read files, write code, run tests, execute commands.
+
+Each linked project appears as a junction inside the workspace, so the agent can navigate between projects.
+
+## Schedule Tasks
 
 <p align="center">
-  <img src="docs/screenshots/scheduler-calendar.png" width="700" alt="Scheduler calendar" />
+  <img src="docs/screenshots/scheduler-calendar.png" width="700" alt="Scheduler — calendar view" />
 </p>
 
-The scheduler runs tasks automatically on a schedule. Two system tasks are pre-configured:
+Two system tasks run automatically:
 
 | Task | Schedule | Purpose |
 |------|----------|---------|
 | **Heartbeat** | Every few hours (07:00–23:00) | Agent checks for pending items, new files, deadlines |
 | **REM Sleep** | Daily at 03:00 | Nightly memory consolidation — deduplicate, clean up, plan ahead |
 
-<p align="center">
-  <img src="docs/screenshots/scheduler-list.png" width="700" alt="Scheduler list view" />
-</p>
-
-Switch between **Calendar** and **List** view. Filter by type: **Sys** (system), **Agent** (created by the agent), **User** (created by you).
-
-### Creating Tasks
+You can create your own scheduled tasks with **+ Task**:
 
 <p align="center">
-  <img src="docs/screenshots/scheduler-new-task.png" width="700" alt="New task form" />
+  <img src="docs/screenshots/scheduler-new-task.png" width="700" alt="Create a new scheduled task" />
 </p>
 
-Click **+ Task** to create a new scheduled task:
-
-1. **Name** — a descriptive title
-2. **Prompt** — what the agent should do when the task fires
-3. **Frequency** — One-time, Daily, Weekly, Interval, or raw Cron expression
-4. **Start Date & Time** — when to begin
-
-The agent can also create its own tasks via the scheduler MCP tool.
-
-## Projects
-
-Link local folders as projects so the agent can access them:
-
-1. Go to the **Projects** tab
-2. Click **+ Project** and select a folder
-3. The folder appears as a junction in `workspace/projects/`
-
-The agent can then navigate to projects, read/write files, and run commands. Each project gets its own git tracking (if enabled).
+The agent can also create tasks on its own via the scheduler MCP tool.
 
 ## How the Agent Learns
 
@@ -185,7 +149,7 @@ miniMe uses a **Second Brain** architecture. Everything the agent learns is stor
 
 ```
 workspace/
-├── SOUL.md              # Agent identity — who it is, how it communicates
+├── SOUL.md              # Agent identity and communication style
 ├── HEARTBEAT.md         # Instructions for proactive checks
 ├── memory/
 │   ├── CLAUDE.md        # Main index — routing table for all knowledge
@@ -198,44 +162,60 @@ workspace/
 └── .claude/skills/      # Built-in skills (memory, contacts, tasks, etc.)
 ```
 
-The agent updates its memory continuously:
-- **During conversations** — new facts are saved immediately
-- **PreCompact** (context getting full) — important things are saved before compression
-- **REM Sleep** (nightly) — full consolidation, cleanup, and planning
-
-All changes are git-tracked, so you can see what the agent learned over time.
-
-## Danger Zone
-
-In Settings, scroll to the bottom and expand **Danger Zone** to reset components:
-
-| Reset | What it clears |
-|-------|---------------|
-| **Settings** | All config back to defaults (app reloads) |
-| **Conversations** | All chat history and messages |
-| **Scheduler** | All tasks (system tasks are re-created) |
-| **Workspace** | Memory, templates, tmp/ — **language dialog reappears** |
-| **WhatsApp** | Disconnect + delete credentials (re-scan QR needed) |
-
-Select one or more, then confirm. Selecting all performs a **Full Reset**.
-
-> **Workspace Reset** deletes the agent's entire memory and re-scaffolds from scratch. You'll be asked to choose the language again.
+The agent updates its memory continuously — during conversations, before context compression (PreCompact), and during nightly consolidation (REM Sleep). All changes are git-tracked.
 
 ---
 
-# Bedienungsanleitung
+# Settings
 
-## Voraussetzungen
+<p align="center">
+  <img src="docs/screenshots/settings.png" width="700" alt="Settings page" />
+</p>
 
-- Ein [Anthropic API Key](https://console.anthropic.com/) (als `ANTHROPIC_API_KEY` Umgebungsvariable gesetzt)
-- [Claude Code CLI](https://docs.anthropic.com/en/docs/claude-code) installiert und authentifiziert
-- WhatsApp-Account (optional — fuer mobilen Zugriff)
+| Section | Setting | What it does |
+|---------|---------|-------------|
+| **Agent** | Permission Mode | Ask / Accept Edits / Bypass / Plan |
+| **Agent** | Model | Default, Sonnet, or Haiku |
+| **WhatsApp** | Auto-Connect | Connect WhatsApp automatically on startup |
+| **WhatsApp** | Response Mode | sendMessage (deliberate) or Streaming (real-time) |
+| **App** | Minimize to Tray | Close button hides to tray instead of quitting |
+| **App** | Start with System | Launch on login |
+| **App** | Use Git | Track workspace and project changes with git |
 
-## Installation
+## Danger Zone
 
-Lade das neueste Release fuer deine Plattform herunter:
+Reset individual components or perform a full reset:
 
-- **Windows**: `minime-x.x.x-setup.exe` (NSIS Installer)
+| Reset | What it clears |
+|-------|---------------|
+| **Settings** | All config back to defaults |
+| **Conversations** | All chat history and messages |
+| **Scheduler** | All tasks (system tasks are re-created) |
+| **Workspace** | Memory, templates — language dialog reappears |
+| **WhatsApp** | Disconnect + delete credentials |
+
+---
+
+# Schnellstart
+
+In 3 Schritten startklar.
+
+## 1. Claude Code installieren
+
+miniMe braucht [Claude Code](https://docs.anthropic.com/en/docs/claude-code) auf deinem Rechner.
+
+```bash
+npm install -g @anthropic-ai/claude-code
+claude  # Authentifizierung durchlaufen
+```
+
+Stelle sicher, dass dein [Anthropic API Key](https://console.anthropic.com/) als `ANTHROPIC_API_KEY` Umgebungsvariable gesetzt ist, oder dass du ueber die eingebaute Auth von Claude Code authentifiziert bist.
+
+## 2. miniMe installieren
+
+Lade das neueste Release herunter:
+
+- **Windows**: `minime-x.x.x-setup.exe`
 - **Linux**: `minime-x.x.x-x64.AppImage` oder `.deb`
 
 Oder selbst bauen:
@@ -246,148 +226,105 @@ npm install
 npm run build:win    # oder build:linux
 ```
 
-## Erster Start
+Beim ersten Start waehlst du die Sprache (Deutsch / English). Das legt die Persoenlichkeit, Memory-Struktur und den Kommunikationsstil des Agents fest.
 
-Beim allerersten Start ist der Workspace leer und ein **Sprachwahl-Dialog** erscheint:
-
-1. Waehle **Deutsch** oder **English** — das legt die Sprache fuer alle Agent-Templates fest (Identitaet, Memory-Struktur, Skills)
-2. Der Workspace wird mit der gewaehlten Sprache erstellt
-3. Diese Wahl ist dauerhaft — um sie spaeter zu aendern, nutze den Workspace-Reset in der Danger Zone
-
-> Die Spracheinstellung steuert die internen Templates und den Kommunikationsstil des Agents. Die UI selbst ist immer auf Englisch.
-
-## Sessions
+## 3. WhatsApp verbinden
 
 <p align="center">
-  <img src="docs/screenshots/sessions-chat.png" width="700" alt="Sessions-Ansicht" />
+  <img src="docs/screenshots/whatsapp.png" width="700" alt="miniMe WhatsApp-Seite — Connect klicken" />
 </p>
 
-Im Sessions-Tab interagierst du mit deinem Agent.
+Klicke **Connect** im WhatsApp-Tab. Ein QR-Code erscheint in der App.
 
-- **+ New** erstellt eine neue Konversation
-- Nachrichten von WhatsApp und der UI erscheinen in der gleichen Timeline
-- Der Header zeigt: Status (Active/Closed), Startzeit, Dauer und aufgelaufene Kosten
-- **Terminal** oeffnet Claude Code in einem separaten Terminal fuer dieselbe Session
-- **Code** oeffnet VS Code im Arbeitsverzeichnis der Session
-- **Files** oeffnet den Workspace-Ordner
-
-### Permission Requests
+Auf dem Handy: **WhatsApp** > **Verknuepfte Geraete** > **Geraet verknuepfen** und QR-Code scannen:
 
 <p align="center">
-  <img src="docs/screenshots/permission-request.png" width="700" alt="Permission Request" />
+  <img src="docs/screenshots/whatsapp-linked-devices.jpg" width="250" alt="WhatsApp — Geraet verknuepfen" />
+  &nbsp;&nbsp;
+  <img src="docs/screenshots/whatsapp-qr-login.jpg" width="250" alt="QR-Code scannen" />
+  &nbsp;&nbsp;
+  <img src="docs/screenshots/whatsapp-linked-devices-connected.jpg" width="250" alt="miniMe verbunden" />
 </p>
 
-Wenn der Agent ein Tool nutzen will (z.B. WebSearch, Datei-Edits, Bash-Befehle), erscheint ein Permission-Prompt:
-
-- **Allow** — diese spezifische Aktion genehmigen
-- **Deny** — blockieren, Agent versucht eine Alternative
-
-Das orange Badge am Sessions-Icon in der Sidebar zeigt eine ausstehende Permission an. Um staendige Prompts zu vermeiden, aendere den Permission Mode in den Settings.
-
-## WhatsApp
+Sobald verbunden, erscheint **miniMe** als verknuepftes Geraet. Fertig — einfach eine Nachricht schreiben.
 
 <p align="center">
-  <img src="docs/screenshots/whatsapp.png" width="700" alt="WhatsApp-Seite" />
+  <img src="docs/screenshots/whatsapp-agent-response.jpg" width="300" alt="Agent antwortet via WhatsApp" />
 </p>
 
-1. Klicke **Connect** — ein QR-Code erscheint
-2. Oeffne WhatsApp auf dem Handy → Verknuepfte Geraete → Geraet verknuepfen
-3. QR-Code scannen
-4. Sobald verbunden, zeigt die Statusleiste **Connected** in Gruen
+---
 
-Jetzt kannst du dem Agent vom Handy schreiben. Er antwortet autonom. Der **Response Mode** in den Settings steuert wie:
+# Was du damit machen kannst
 
-| Modus | Verhalten |
-|-------|-----------|
-| **sendMessage** | Agent entscheidet gezielt was er sendet — ueberlegter |
-| **Streaming** | Aller Assistant-Text wird sofort weitergeleitet |
+## Von ueberall chatten
 
-### Kontakte
-
-Fuege Kontakte auf der WhatsApp-Seite hinzu, damit der Agent weiss mit wem er spricht. Markiere einen Kontakt als **Owner** — das bist du. Der Agent nutzt das fuer sein User-Profil.
-
-## Settings
+Schreib eine Nachricht via WhatsApp oder in der eingebauten Sessions-UI — beide teilen sich dieselbe Konversation. Der Agent nutzt Claude Code im Hintergrund und kann im Web suchen, Dateien lesen/schreiben, Befehle ausfuehren und mehr.
 
 <p align="center">
-  <img src="docs/screenshots/settings.png" width="700" alt="Settings-Seite" />
+  <img src="docs/screenshots/sessions-chat.png" width="700" alt="Sessions — Chat-Ansicht" />
 </p>
 
-### Agent
+## Permissions steuern
 
-| Einstellung | Optionen | Was es tut |
-|-------------|----------|-----------|
-| **Permission Mode** | Ask, Accept Edits, Bypass, Plan | Steuert wie viel Autonomie der Agent hat |
-| **Model** | Default, Sonnet, Haiku | Welches Claude-Modell verwendet wird |
+Wenn der Agent ein Tool nutzen will, fragt er um Erlaubnis. Du kannst von **WhatsApp** oder der **UI** aus genehmigen oder ablehnen — was gerade praktischer ist.
 
-**Permission Modes erklaert:**
+<p align="center">
+  <img src="docs/screenshots/whatsapp-permission-flow.jpg" width="250" alt="Permission-Anfrage auf WhatsApp" />
+  &nbsp;&nbsp;
+  <img src="docs/screenshots/whatsapp-permission-approve.jpg" width="250" alt="Permission auf WhatsApp genehmigen" />
+</p>
 
-| Modus | Beschreibung |
-|-------|-------------|
-| **Ask** | Agent fragt vor jedem Tool-Aufruf — maximale Kontrolle |
-| **Accept Edits** | Datei-Edits werden automatisch genehmigt, alles andere fragt |
+<p align="center">
+  <img src="docs/screenshots/permission-request.png" width="700" alt="Permission-Anfrage in der UI" />
+</p>
+
+Keine Lust jede Aktion zu genehmigen? Aendere den **Permission Mode** in den Settings:
+
+| Modus | Was es bedeutet |
+|-------|----------------|
+| **Ask** | Agent fragt vor jeder Tool-Nutzung — volle Kontrolle |
+| **Accept Edits** | Datei-Edits auto-genehmigt, andere Tools fragen |
 | **Bypass** | Voll autonom — keine Prompts |
 | **Plan** | Nur-Lesen-Modus — Agent kann nur lesen, nicht aendern |
 
-### WhatsApp
+Auf **Bypass** gestellt arbeitet der Agent komplett eigenstaendig. Auf **Ask** bleibst du bei jedem Schritt informiert.
 
-| Einstellung | Was es tut |
-|-------------|-----------|
-| **Auto-Connect** | WhatsApp automatisch verbinden beim App-Start |
-| **Response Mode** | sendMessage (ueberlegt) oder Streaming (Echtzeit) |
+## Lokal weitermachen
 
-### Application
+Jede Session hat ein Arbeitsverzeichnis und eine Session-ID. Du kannst dieselbe Session auf deinem lokalen Rechner fortsetzen:
 
-| Einstellung | Was es tut |
-|-------------|-----------|
-| **Minimize to Tray** | Schliessen-Button minimiert in den System Tray statt zu beenden |
-| **Start with System** | Automatisch starten beim Login |
-| **Use Git** | Workspace- und Projekt-Aenderungen mit Git tracken |
-| **Version** | Aktuelle Version + nach Updates suchen |
-| **Workspace** | Pfad zum Workspace-Ordner (Klick zum Kopieren, Open zum Oeffnen) |
+- **Terminal** — oeffnet Claude Code im Terminal, setzt exakt dieselbe Session fort
+- **Code** — oeffnet VS Code im Arbeitsverzeichnis der Session
+- **Files** — oeffnet den Workspace-Ordner
 
-## Scheduler
+Das heisst: du kannst einen Task vom Handy via WhatsApp starten, dich dann an den PC setzen und in VS Code oder Claude Code mit vollem Kontext weitermachen.
+
+## Projekte einbinden
+
+Gehe zu **Projects** > **+ Project** und waehle einen Ordner auf deinem Rechner. Der Agent kann dann darauf zugreifen — Dateien lesen, Code schreiben, Tests ausfuehren, Befehle starten.
+
+Jedes verlinkte Projekt erscheint als Junction im Workspace, sodass der Agent zwischen Projekten navigieren kann.
+
+## Tasks planen
 
 <p align="center">
-  <img src="docs/screenshots/scheduler-calendar.png" width="700" alt="Scheduler-Kalender" />
+  <img src="docs/screenshots/scheduler-calendar.png" width="700" alt="Scheduler — Kalenderansicht" />
 </p>
 
-Der Scheduler fuehrt Tasks automatisch nach Zeitplan aus. Zwei System-Tasks sind vorkonfiguriert:
+Zwei System-Tasks laufen automatisch:
 
 | Task | Zeitplan | Zweck |
 |------|----------|-------|
 | **Heartbeat** | Alle paar Stunden (07:00–23:00) | Agent prueft offene Punkte, neue Dateien, Deadlines |
 | **REM Sleep** | Taeglich um 03:00 | Naechtliche Memory-Konsolidierung — deduplizieren, aufraeumen, vorausplanen |
 
-<p align="center">
-  <img src="docs/screenshots/scheduler-list.png" width="700" alt="Scheduler-Listenansicht" />
-</p>
-
-Wechsle zwischen **Kalender-** und **Listenansicht**. Filtere nach Typ: **Sys** (System), **Agent** (vom Agent erstellt), **User** (von dir erstellt).
-
-### Tasks erstellen
+Eigene Tasks erstellst du mit **+ Task**:
 
 <p align="center">
-  <img src="docs/screenshots/scheduler-new-task.png" width="700" alt="Neuer Task" />
+  <img src="docs/screenshots/scheduler-new-task.png" width="700" alt="Neuen Task erstellen" />
 </p>
-
-Klicke **+ Task** um einen neuen geplanten Task zu erstellen:
-
-1. **Name** — ein beschreibender Titel
-2. **Prompt** — was der Agent tun soll wenn der Task feuert
-3. **Frequenz** — Einmal, Taeglich, Woechentlich, Intervall oder roher Cron-Ausdruck
-4. **Startdatum & Uhrzeit** — wann es losgehen soll
 
 Der Agent kann auch selbst Tasks ueber das Scheduler-MCP-Tool erstellen.
-
-## Projekte
-
-Verlinke lokale Ordner als Projekte, damit der Agent darauf zugreifen kann:
-
-1. Gehe zum **Projects**-Tab
-2. Klicke **+ Project** und waehle einen Ordner
-3. Der Ordner erscheint als Junction in `workspace/projects/`
-
-Der Agent kann dann zu Projekten navigieren, Dateien lesen/schreiben und Befehle ausfuehren. Jedes Projekt bekommt eigenes Git-Tracking (wenn aktiviert).
 
 ## Wie der Agent lernt
 
@@ -395,7 +332,7 @@ miniMe nutzt eine **Second Brain**-Architektur. Alles was der Agent lernt wird i
 
 ```
 workspace/
-├── SOUL.md              # Agent-Identitaet — wer er ist, wie er kommuniziert
+├── SOUL.md              # Agent-Identitaet und Kommunikationsstil
 ├── HEARTBEAT.md         # Anleitung fuer proaktive Checks
 ├── memory/
 │   ├── CLAUDE.md        # Hauptindex — Routing-Tabelle fuer alles Wissen
@@ -408,25 +345,34 @@ workspace/
 └── .claude/skills/      # Eingebaute Skills (Memory, Kontakte, Tasks, etc.)
 ```
 
-Der Agent aktualisiert sein Gedaechtnis kontinuierlich:
-- **Waehrend Konversationen** — neue Fakten werden sofort gespeichert
-- **PreCompact** (Kontext wird voll) — Wichtiges wird vor der Kompression gesichert
-- **REM Sleep** (naechtlich) — volle Konsolidierung, Aufraeumen und Vorausplanung
+Der Agent aktualisiert sein Gedaechtnis kontinuierlich — waehrend Konversationen, vor Context-Kompression (PreCompact) und bei der naechtlichen Konsolidierung (REM Sleep). Alle Aenderungen sind git-getrackt.
 
-Alle Aenderungen sind git-getrackt, du kannst also sehen was der Agent ueber die Zeit gelernt hat.
+---
+
+# Einstellungen
+
+<p align="center">
+  <img src="docs/screenshots/settings.png" width="700" alt="Settings-Seite" />
+</p>
+
+| Bereich | Einstellung | Was es tut |
+|---------|-------------|-----------|
+| **Agent** | Permission Mode | Ask / Accept Edits / Bypass / Plan |
+| **Agent** | Model | Default, Sonnet oder Haiku |
+| **WhatsApp** | Auto-Connect | WhatsApp automatisch verbinden beim Start |
+| **WhatsApp** | Response Mode | sendMessage (ueberlegt) oder Streaming (Echtzeit) |
+| **App** | Minimize to Tray | Schliessen minimiert in den Tray |
+| **App** | Start with System | Automatisch starten beim Login |
+| **App** | Use Git | Workspace- und Projekt-Aenderungen tracken |
 
 ## Danger Zone
 
-In den Settings nach unten scrollen und **Danger Zone** aufklappen um Komponenten zurueckzusetzen:
+Einzelne Komponenten oder alles zuruecksetzen:
 
 | Reset | Was geloescht wird |
 |-------|--------------------|
-| **Settings** | Alle Einstellungen auf Defaults (App laedt neu) |
+| **Settings** | Alle Einstellungen auf Defaults |
 | **Conversations** | Gesamter Chat-Verlauf und Nachrichten |
 | **Scheduler** | Alle Tasks (System-Tasks werden neu erstellt) |
-| **Workspace** | Memory, Templates, tmp/ — **Sprachwahl-Dialog erscheint erneut** |
-| **WhatsApp** | Trennen + Credentials loeschen (QR neu scannen) |
-
-Einen oder mehrere auswaehlen, dann bestaetigen. Alle auswaehlen fuehrt einen **Full Reset** durch.
-
-> **Workspace Reset** loescht das gesamte Gedaechtnis des Agents und erstellt den Workspace neu. Du wirst erneut nach der Sprache gefragt.
+| **Workspace** | Memory, Templates — Sprachwahl-Dialog erscheint erneut |
+| **WhatsApp** | Trennen + Credentials loeschen |
