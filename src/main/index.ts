@@ -9,7 +9,7 @@ import { setMessageHandler, sendMessage, setOnReconnect, disconnect as disconnec
 import { parseCommand } from './commands'
 import * as bridge from './bridge'
 import { fetchModels } from './agent'
-import { scaffoldWorkspace } from './workspace'
+import { scaffoldWorkspace, needsLanguageChoice } from './workspace'
 import { startScheduler, stopScheduler } from './scheduler'
 import { createTray, destroyTray, rebuildTrayMenu } from './tray'
 import { initUpdater, stopUpdater } from './updater'
@@ -29,7 +29,7 @@ app.on('second-instance', () => {
   }
 })
 
-function createWindow(): void {
+function createWindow(): BrowserWindow {
   const mainWindow = new BrowserWindow({
     width: 1000,
     height: 700,
@@ -68,6 +68,8 @@ function createWindow(): void {
   } else {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
   }
+
+  return mainWindow
 }
 
 function setupMessageHandler(): void {
@@ -109,9 +111,16 @@ app.whenReady().then(async () => {
   // Fetch available models in background (non-blocking), then update tray menu
   fetchModels().then(() => rebuildTrayMenu()).catch(() => {})
 
-  createWindow()
+  const mainWindow = createWindow()
   createTray(icon)
   initUpdater()
+
+  // First-run: show language choice dialog after window is ready
+  if (needsLanguageChoice) {
+    mainWindow.webContents.once('did-finish-load', () => {
+      mainWindow.webContents.send('workspace:chooseLanguage')
+    })
+  }
 
   // Sync autostart setting with OS
   app.setLoginItemSettings({

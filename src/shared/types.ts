@@ -16,6 +16,7 @@ export interface ConfigMap {
   minimizeToTray: boolean
   startWithSystem: boolean
   useGit: boolean
+  language: 'de' | 'en'
 }
 
 export type ConfigKey = keyof ConfigMap
@@ -217,6 +218,13 @@ export interface IpcApi {
 
   // Git
   isGitAvailable(): Promise<boolean>
+
+  // Workspace
+  workspaceNeedsSetup(): Promise<boolean>
+  workspaceScaffold(): Promise<void>
+
+  // Events (renderer subscribes)
+  onChooseLanguage(callback: () => void): () => void
 
   // Reset
   resetSettings(): Promise<void>

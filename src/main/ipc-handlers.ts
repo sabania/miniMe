@@ -1,4 +1,4 @@
-import { app, ipcMain, dialog, shell } from 'electron'
+import { app, ipcMain, dialog, shell, BrowserWindow } from 'electron'
 import { execFile, spawn } from 'child_process'
 import { randomUUID } from 'crypto'
 import { getTypedConfig, setTypedConfig, getAllTypedConfig, isValidConfigKey, initDefaults } from './config'
@@ -6,7 +6,7 @@ import * as db from './db'
 import * as whatsapp from './whatsapp'
 import * as bridge from './bridge'
 import * as workspace from './workspace'
-import { isGitAvailable, initGitRepo, initAllProjectGits } from './workspace'
+import { isGitAvailable, initGitRepo, initAllProjectGits, workspaceNeedsSetup, forceScaffoldWorkspace } from './workspace'
 import { syncScheduledTasks, getSchedulerStatus, stopScheduler, startScheduler } from './scheduler'
 import { getCachedModels, fetchModels } from './agent'
 import { getUpdateStatus, checkForUpdates, downloadUpdate, installUpdate } from './updater'
@@ -301,6 +301,15 @@ export function registerIpcHandlers(): void {
     return app.getVersion()
   })
 
+  // ─── Workspace ────────────────────────────────────────────
+  ipcMain.handle('workspace:needsSetup', () => {
+    return workspaceNeedsSetup()
+  })
+
+  ipcMain.handle('workspace:scaffold', () => {
+    forceScaffoldWorkspace()
+  })
+
   // ─── Reset ──────────────────────────────────────────────
   ipcMain.handle('reset:settings', () => {
     db.resetConfig()
@@ -320,6 +329,10 @@ export function registerIpcHandlers(): void {
 
   ipcMain.handle('reset:workspace', () => {
     workspace.resetWorkspace()
+    // Show language dialog so user can choose language for re-scaffold
+    for (const win of BrowserWindow.getAllWindows()) {
+      win.webContents.send('workspace:chooseLanguage')
+    }
   })
 
   ipcMain.handle('reset:whatsapp', async () => {
@@ -336,6 +349,10 @@ export function registerIpcHandlers(): void {
     initDefaults()
     startScheduler()
     workspace.resetWorkspace()
+    // Show language dialog so user can choose language for re-scaffold
+    for (const win of BrowserWindow.getAllWindows()) {
+      win.webContents.send('workspace:chooseLanguage')
+    }
   })
 }
 

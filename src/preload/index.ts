@@ -114,6 +114,15 @@ const api: IpcApi = {
   // Git
   isGitAvailable: () => ipcRenderer.invoke('git:available'),
 
+  // Workspace
+  workspaceNeedsSetup: () => ipcRenderer.invoke('workspace:needsSetup'),
+  workspaceScaffold: () => ipcRenderer.invoke('workspace:scaffold'),
+  onChooseLanguage: (callback: () => void) => {
+    const handler = (): void => callback()
+    ipcRenderer.on('workspace:chooseLanguage', handler)
+    return () => { ipcRenderer.removeListener('workspace:chooseLanguage', handler) }
+  },
+
   // Reset
   resetSettings: () => ipcRenderer.invoke('reset:settings'),
   resetConversations: () => ipcRenderer.invoke('reset:conversations'),

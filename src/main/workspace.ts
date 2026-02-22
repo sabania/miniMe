@@ -120,13 +120,25 @@ export function removeJunction(junctionPath: string): void {
   rmdirSync(junctionPath)
 }
 
+// ─── First-Run Detection ─────────────────────────────────────
+
+/** Flag set when workspace has no CLAUDE.md yet (first run) */
+export let needsLanguageChoice = false
+
+/** Check whether the workspace needs initial setup (no CLAUDE.md yet) */
+export function workspaceNeedsSetup(): boolean {
+  const ws = getTypedConfig('workspacePath')
+  return !existsSync(join(ws, 'CLAUDE.md'))
+}
+
 // ─── Scaffolding ─────────────────────────────────────────────
 
 function getTemplatesDir(): string {
+  const lang = getTypedConfig('language')
   if (app.isPackaged) {
-    return join(process.resourcesPath, 'templates')
+    return join(process.resourcesPath, 'templates', lang)
   }
-  return join(app.getAppPath(), 'resources', 'templates')
+  return join(app.getAppPath(), 'resources', 'templates', lang)
 }
 
 /** Copy a template file only if the destination does not exist yet. */
@@ -189,10 +201,25 @@ tmp/
 /**
  * Set up workspace directory structure, copy templates, generate dynamic files.
  * Safe to call on every app start — never overwrites user content.
+ *
+ * On first run (no CLAUDE.md yet), sets `needsLanguageChoice = true` and returns
+ * without scaffolding. The main process will show the language dialog first,
+ * then call this function again after the language is set.
  */
 export function scaffoldWorkspace(): void {
   const ws = getTypedConfig('workspacePath')
 
+  // First-run: need language choice before scaffolding
+  if (!existsSync(join(ws, 'CLAUDE.md'))) {
+    needsLanguageChoice = true
+    return
+  }
+
+  _doScaffold(ws)
+}
+
+/** Internal: actual scaffolding logic (shared between scaffoldWorkspace and forceScaffoldWorkspace) */
+function _doScaffold(ws: string): void {
   // 1. Create directories (Second Brain structure)
   for (const dir of [
     'memory',
@@ -286,11 +313,21 @@ function cleanupOldMedia(ws: string): void {
   }
 }
 
+/**
+ * Force scaffold — skips first-run check.
+ * Called after language has been chosen (first run or reset).
+ */
+export function forceScaffoldWorkspace(): void {
+  needsLanguageChoice = false
+  const ws = getTypedConfig('workspacePath')
+  _doScaffold(ws)
+}
+
 /** Delete workspace and re-scaffold from scratch */
 export function resetWorkspace(): void {
   const ws = getTypedConfig('workspacePath')
   rmSync(ws, { recursive: true, force: true })
-  scaffoldWorkspace()
+  // Don't auto-scaffold — caller will show language dialog first
 }
 
 /** Get the media directory path for storing downloaded WhatsApp media */
@@ -464,13 +501,18 @@ export function generateCLAUDEmd(): void {
   const filePath = join(ws, 'CLAUDE.md')
   const projects = getProjects()
 
+  const lang = getTypedConfig('language')
   let projectTable: string
   if (projects.length > 0) {
-    projectTable =
-      '## Projekte\n| Projekt | Pfad |\n|---------|------|\n' +
-      projects.map((p) => `| ${p.name} | projects/${p.name}/ |`).join('\n')
+    projectTable = lang === 'de'
+      ? '## Projekte\n| Projekt | Pfad |\n|---------|------|\n' +
+        projects.map((p) => `| ${p.name} | projects/${p.name}/ |`).join('\n')
+      : '## Projects\n| Project | Path |\n|---------|------|\n' +
+        projects.map((p) => `| ${p.name} | projects/${p.name}/ |`).join('\n')
   } else {
-    projectTable = '## Projekte\n(keine Projekte konfiguriert)'
+    projectTable = lang === 'de'
+      ? '## Projekte\n(keine Projekte konfiguriert)'
+      : '## Projects\n(no projects configured)'
   }
 
   replaceGeneratedSection(filePath, 'PROJECTS', projectTable)
@@ -488,24 +530,27 @@ export function generateUserProfile(): void {
   const contacts = getContacts()
   const owner = contacts.find((c) => c.isOwner)
 
+  const lang = getTypedConfig('language')
   const lines = ['# User']
   if (name) lines.push(`Name: ${name}`)
-  lines.push('Sprache: Deutsch')
+  lines.push(lang === 'de' ? 'Sprache: Deutsch' : 'Language: English')
   if (owner) {
-    lines.push(`Telefon: +${owner.jid.replace(/@.*$/, '')}`)
+    lines.push(`${lang === 'de' ? 'Telefon' : 'Phone'}: +${owner.jid.replace(/@.*$/, '')}`)
     if (owner.displayName) lines.push(`WhatsApp: ${owner.displayName}`)
   }
 
   if (prefs) {
     lines.push('')
-    lines.push('## Praeferenzen')
+    lines.push(lang === 'de' ? '## Praeferenzen' : '## Preferences')
     lines.push(prefs)
   }
 
   if (contacts.length > 0) {
     lines.push('')
-    lines.push('## Kontakte')
-    lines.push('| Name | Nummer | Beschreibung |')
+    lines.push(lang === 'de' ? '## Kontakte' : '## Contacts')
+    lines.push(lang === 'de'
+      ? '| Name | Nummer | Beschreibung |'
+      : '| Name | Number | Description |')
     lines.push('|------|--------|-------------|')
     for (const c of contacts) {
       const num = '+' + c.jid.replace(/@.*$/, '')

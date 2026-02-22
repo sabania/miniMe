@@ -19,7 +19,8 @@ const DEFAULTS: ConfigMap = {
   userPreferences: '',
   minimizeToTray: true,
   startWithSystem: false,
-  useGit: true
+  useGit: true,
+  language: 'de'
 }
 
 function getDefaultWorkspacePath(): string {

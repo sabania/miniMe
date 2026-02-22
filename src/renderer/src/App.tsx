@@ -3,6 +3,7 @@ import type { WhatsAppState, AgentState, Conversation, Message } from '../../sha
 
 import { StatusHeader } from './components/StatusHeader'
 import { UpdateBanner } from './components/UpdateBanner'
+import { LanguageDialog } from './components/LanguageDialog'
 import { SessionPanel } from './components/SessionPanel'
 import { SessionDetail } from './components/SessionDetail'
 import { WhatsAppPage } from './pages/WhatsAppPage'
@@ -56,6 +57,7 @@ const NAV_ITEMS: { id: View; label: string }[] = [
 
 function App(): React.JSX.Element {
   const [activeView, setActiveView] = useState<View>('sessions')
+  const [showLanguageDialog, setShowLanguageDialog] = useState(false)
   const [toast, showToast] = useToast()
 
   // Global state
@@ -104,7 +106,10 @@ function App(): React.JSX.Element {
         setActiveView(view as View)
       }
     })
-    return () => { unsubWa(); unsubAgent(); unsubMsg(); unsubNav() }
+    const unsubLang = window.api.onChooseLanguage(() => {
+      setShowLanguageDialog(true)
+    })
+    return () => { unsubWa(); unsubAgent(); unsubMsg(); unsubNav(); unsubLang() }
   }, [loadConversations])
 
   // Auto-select active session when switching to sessions view
@@ -165,10 +170,19 @@ function App(): React.JSX.Element {
     await window.api.respondPermission({ id: agentState.pendingPermission.id, decision, answer })
   }
 
+  const handleLanguageSelect = async (lang: 'de' | 'en'): Promise<void> => {
+    await window.api.setConfig('language', lang)
+    await window.api.workspaceScaffold()
+    setShowLanguageDialog(false)
+  }
+
   const selectedConv = conversations.find((c) => c.id === selectedId)
 
   return (
     <div className="flex h-screen w-screen bg-zinc-950 text-zinc-100">
+      {/* Language Dialog */}
+      {showLanguageDialog && <LanguageDialog onSelect={handleLanguageSelect} />}
+
       {/* Icon Rail */}
       <nav className="flex w-12 flex-col items-center border-r border-zinc-800/80 bg-zinc-900/60 pt-3 gap-1">
         {NAV_ITEMS.map((item) => {
