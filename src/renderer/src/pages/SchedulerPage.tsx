@@ -38,9 +38,9 @@ const TYPE_COLORS: Record<TaskType, { chip: string; badge: string; dot: string; 
   }
 }
 
-const WEEKDAY_LABELS: [number, string][] = [[1, 'Mo'], [2, 'Di'], [3, 'Mi'], [4, 'Do'], [5, 'Fr'], [6, 'Sa'], [0, 'So']]
-const DAY_NAMES = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So']
-const MONTH_NAMES = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember']
+const WEEKDAY_LABELS: [number, string][] = [[1, 'Mon'], [2, 'Tue'], [3, 'Wed'], [4, 'Thu'], [5, 'Fri'], [6, 'Sat'], [0, 'Sun']]
+const DAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
 
 // ─── Calendar Helpers ───────────────────────────────────────
 
@@ -239,7 +239,7 @@ export function SchedulerPage(): React.JSX.Element {
               <circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" />
             </svg>
             <input
-              type="text" placeholder="Suche..." value={search}
+              type="text" placeholder="Search..." value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full pl-7 pr-2.5 py-1 rounded-md text-xs bg-zinc-900/50 border border-zinc-700/50 text-zinc-300 placeholder-zinc-600 focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-blue-500/20 transition-all"
             />
@@ -271,7 +271,7 @@ export function SchedulerPage(): React.JSX.Element {
                 {!isCurrentMonth && (
                   <button type="button" onClick={goToday}
                     className="text-[10px] text-zinc-500 hover:text-blue-400 px-2 py-0.5 rounded-full border border-zinc-700/40 hover:border-blue-500/30 hover:bg-blue-600/10 transition-all">
-                    Heute
+                    Today
                   </button>
                 )}
               </div>
@@ -339,7 +339,7 @@ export function SchedulerPage(): React.JSX.Element {
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-zinc-700">
                       <rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" />
                     </svg>
-                    <p className="text-xs text-zinc-600">Keine Tasks an diesem Tag</p>
+                    <p className="text-xs text-zinc-600">No tasks on this day</p>
                   </div>
                 ) : selectedDayTasks.map((task) => (
                   <div key={task.id} className="flex items-center gap-2.5 py-2 border-b border-zinc-800/30 last:border-0">
@@ -348,12 +348,12 @@ export function SchedulerPage(): React.JSX.Element {
                       <div className="flex items-center gap-2">
                         <span className="text-xs text-zinc-200 truncate">{task.name}</span>
                         {task.oneShot && (
-                          <span className="text-[9px] text-amber-400/70 bg-amber-500/10 px-1.5 py-0.5 rounded-full leading-none">einmalig</span>
+                          <span className="text-[9px] text-amber-400/70 bg-amber-500/10 px-1.5 py-0.5 rounded-full leading-none">one-time</span>
                         )}
                       </div>
                       <div className="text-[10px] text-zinc-500 truncate mt-0.5">{describeCron(task.cronExpr)}</div>
                     </div>
-                    <button type="button" onClick={() => startEdit(task)} className="text-zinc-600 hover:text-zinc-300 p-1 rounded-md hover:bg-zinc-800/50 transition-colors" title="Bearbeiten">
+                    <button type="button" onClick={() => startEdit(task)} className="text-zinc-600 hover:text-zinc-300 p-1 rounded-md hover:bg-zinc-800/50 transition-colors" title="Edit">
                       <EditIcon />
                     </button>
                   </div>
@@ -388,9 +388,9 @@ export function SchedulerPage(): React.JSX.Element {
                 </div>
                 <div>
                   <p className="text-xs text-zinc-400">
-                    {search ? 'Keine Treffer' : 'Keine Tasks vorhanden'}
+                    {search ? 'No results' : 'No tasks yet'}
                   </p>
-                  {!search && <p className="text-[11px] text-zinc-600 mt-0.5">Erstelle deinen ersten Task mit dem + Button</p>}
+                  {!search && <p className="text-[11px] text-zinc-600 mt-0.5">Create your first task with the + button</p>}
                 </div>
               </div>
             )}
@@ -417,30 +417,30 @@ export function SchedulerPage(): React.JSX.Element {
                     {/* One-shot indicator */}
                     {task.oneShot && (
                       <span className="text-[9px] text-amber-400/80 bg-amber-500/10 px-1.5 py-0.5 rounded-full font-medium">
-                        einmalig
+                        one-time
                       </span>
                     )}
 
                     {/* Actions */}
                     <div className="flex items-center gap-0.5">
                       <button type="button" onClick={() => startEdit(task)}
-                        className="text-zinc-600 hover:text-zinc-300 p-1.5 rounded-md hover:bg-zinc-800/50 transition-colors" title="Bearbeiten">
+                        className="text-zinc-600 hover:text-zinc-300 p-1.5 rounded-md hover:bg-zinc-800/50 transition-colors" title="Edit">
                         <EditIcon />
                       </button>
                       {deleteConfirm === task.id ? (
                         <div className="flex gap-1 ml-0.5">
                           <button type="button" onClick={() => handleRemoveTask(task.id)}
                             className="text-[10px] text-red-400 hover:text-red-300 px-2 py-1 rounded-md bg-red-900/15 hover:bg-red-900/25 transition-colors font-medium">
-                            Loeschen
+                            Delete
                           </button>
                           <button type="button" onClick={() => setDeleteConfirm(null)}
                             className="text-[10px] text-zinc-500 hover:text-zinc-300 px-2 py-1 rounded-md hover:bg-zinc-800/50 transition-colors">
-                            Abbruch
+                            Cancel
                           </button>
                         </div>
                       ) : (
                         <button type="button" onClick={() => setDeleteConfirm(task.id)}
-                          className="text-zinc-600 hover:text-red-400 p-1.5 rounded-md hover:bg-zinc-800/50 transition-colors" title="Loeschen">
+                          className="text-zinc-600 hover:text-red-400 p-1.5 rounded-md hover:bg-zinc-800/50 transition-colors" title="Delete">
                           <TrashIcon />
                         </button>
                       )}
@@ -456,14 +456,14 @@ export function SchedulerPage(): React.JSX.Element {
                     {task.startDate && !task.oneShot && (
                       <>
                         <span className="text-zinc-700">·</span>
-                        <span className="text-zinc-600">ab {new Date(task.startDate + 'T00:00:00').toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })}</span>
+                        <span className="text-zinc-600">from {new Date(task.startDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
                       </>
                     )}
                     <span className="text-zinc-700">·</span>
                     <span className={task.lastRunAt ? 'text-zinc-500' : 'text-zinc-600 italic'}>
                       {task.lastRunAt
-                        ? `Zuletzt: ${new Date(task.lastRunAt).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}`
-                        : 'Noch nie gelaufen'}
+                        ? `Last: ${new Date(task.lastRunAt).toLocaleString('en-US', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}`
+                        : 'Never run'}
                     </span>
                   </div>
 
@@ -486,12 +486,12 @@ export function SchedulerPage(): React.JSX.Element {
               {activeJobIds.length > 0 && (
                 <span className="inline-flex items-center gap-1 text-[10px] font-normal text-emerald-500/80 normal-case tracking-normal">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  {activeJobIds.length} aktiv
+                  {activeJobIds.length} active
                 </span>
               )}
               {activeJobIds.length === 0 && (
                 <span className="text-[10px] font-normal text-zinc-600 normal-case tracking-normal">
-                  keine aktiven Jobs
+                  no active jobs
                 </span>
               )}
             </span>
@@ -510,12 +510,12 @@ export function SchedulerPage(): React.JSX.Element {
                   <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" strokeLinecap="round" strokeLinejoin="round" />
                   <path d="M14 2v6h6" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
-                <p className="text-zinc-600">Keine Events</p>
+                <p className="text-zinc-600">No events</p>
               </div>
             ) : logEntries.map((entry, i) => (
               <div key={i} className="flex gap-2 py-1 px-1 rounded-md hover:bg-zinc-800/30 transition-colors">
                 <span className="text-zinc-600 shrink-0 tabular-nums">
-                  {new Date(entry.ts).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                  {new Date(entry.ts).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                 </span>
                 <LogBadge type={entry.type} />
                 <span className={`truncate ${
@@ -577,14 +577,14 @@ function TaskFormUI({
     <div className="space-y-4 p-4 rounded-xl bg-zinc-800/20 border border-zinc-700/40">
       {/* Form header */}
       <div className="text-xs font-medium text-zinc-400">
-        {isEdit ? 'Task bearbeiten' : 'Neuer Task'}
+        {isEdit ? 'Edit Task' : 'New Task'}
       </div>
 
       {/* Name + Prompt fields */}
       <div className="space-y-2.5">
         <div className="space-y-1">
           <label className="text-[10px] text-zinc-500 uppercase tracking-wider font-medium">Name</label>
-          <input type="text" placeholder="z.B. Daily Standup Summary" value={form.name}
+          <input type="text" placeholder="e.g. Daily Standup Summary" value={form.name}
             onChange={(e) => setForm({ ...form, name: e.target.value })}
             className={`w-full px-2.5 py-1.5 rounded-md text-xs bg-zinc-900/50 border text-zinc-200 placeholder-zinc-600 focus:outline-none focus:ring-1 transition-all ${
               nameEmpty && form.name !== undefined
@@ -594,7 +594,7 @@ function TaskFormUI({
         </div>
         <div className="space-y-1">
           <label className="text-[10px] text-zinc-500 uppercase tracking-wider font-medium">Prompt</label>
-          <textarea placeholder="Was soll der Agent tun..." value={form.prompt}
+          <textarea placeholder="What should the agent do..." value={form.prompt}
             onChange={(e) => setForm({ ...form, prompt: e.target.value })} rows={3}
             className="w-full px-2.5 py-1.5 rounded-md text-xs bg-zinc-900/50 border border-zinc-700/50 text-zinc-200 placeholder-zinc-600 focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-blue-500/20 transition-all resize-none" />
         </div>
@@ -602,13 +602,13 @@ function TaskFormUI({
 
       {/* Frequency picker */}
       <div className="space-y-2">
-        <label className="text-[10px] text-zinc-500 uppercase tracking-wider font-medium">Frequenz</label>
+        <label className="text-[10px] text-zinc-500 uppercase tracking-wider font-medium">Frequency</label>
         <div className="flex gap-1 flex-wrap">
           {([
-            ['once', 'Einmal', OnceIcon],
-            ['daily', 'Taeglich', DailyIcon],
-            ['weekly', 'Woechentlich', WeeklyIcon],
-            ['interval', 'Intervall', IntervalIcon],
+            ['once', 'Once', OnceIcon],
+            ['daily', 'Daily', DailyIcon],
+            ['weekly', 'Weekly', WeeklyIcon],
+            ['interval', 'Interval', IntervalIcon],
             ['cron', 'Cron', CronIcon]
           ] as [Frequency, string, () => React.JSX.Element][]).map(([freq, label, Icon]) => (
             <Pill key={freq} active={form.frequency === freq} onClick={() => setForm({ ...form, frequency: freq })}>
@@ -621,11 +621,11 @@ function TaskFormUI({
         </div>
       </div>
 
-      {/* Start-Datum + Uhrzeit (fuer once/daily/weekly) */}
+      {/* Start date + time (for once/daily/weekly) */}
       {form.frequency !== 'interval' && form.frequency !== 'cron' && (
         <div className="space-y-1.5">
           <label className="text-[10px] text-zinc-500 uppercase tracking-wider font-medium">
-            {form.frequency === 'once' ? 'Ausfuehrung' : 'Startdatum & Uhrzeit'}
+            {form.frequency === 'once' ? 'Execution' : 'Start Date & Time'}
           </label>
           <div className="flex gap-2 items-center">
             <input type="date" value={form.startDate}
@@ -641,7 +641,7 @@ function TaskFormUI({
       {/* Weekly: weekday pill selector */}
       {form.frequency === 'weekly' && (
         <div className="space-y-1.5">
-          <label className="text-[10px] text-zinc-500 uppercase tracking-wider font-medium">Wiederholen am</label>
+          <label className="text-[10px] text-zinc-500 uppercase tracking-wider font-medium">Repeat on</label>
           <div className="flex gap-1">
             {WEEKDAY_LABELS.map(([num, label]) => (
               <button key={num} type="button" onClick={() => toggleWeekday(num)}
@@ -660,13 +660,13 @@ function TaskFormUI({
       {/* Interval */}
       {form.frequency === 'interval' && (
         <div className="space-y-1.5">
-          <label className="text-[10px] text-zinc-500 uppercase tracking-wider font-medium">Intervall</label>
+          <label className="text-[10px] text-zinc-500 uppercase tracking-wider font-medium">Interval</label>
           <div className="flex gap-2 items-center">
-            <span className="text-xs text-zinc-400">Alle</span>
+            <span className="text-xs text-zinc-400">Every</span>
             <input type="number" min={1} max={1440} value={form.intervalMin}
               onChange={(e) => setForm({ ...form, intervalMin: parseInt(e.target.value) || 60 })}
               className="w-16 px-2 py-1.5 rounded-md text-xs bg-zinc-900/50 border border-zinc-700/50 text-zinc-200 text-center focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-blue-500/20 transition-all" />
-            <span className="text-xs text-zinc-400">Minuten</span>
+            <span className="text-xs text-zinc-400">Minutes</span>
           </div>
         </div>
       )}
@@ -686,12 +686,12 @@ function TaskFormUI({
       <div className="flex items-center justify-between pt-1 border-t border-zinc-700/30">
         <button type="button" onClick={onCancel}
           className="px-3 py-1.5 rounded-md text-xs text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50 transition-colors">
-          Abbrechen
+          Cancel
         </button>
         <button type="button" onClick={onSave}
           disabled={!canSave}
           className="px-4 py-1.5 rounded-md text-xs font-medium bg-blue-600 text-white hover:bg-blue-500 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
-          {isEdit ? 'Aktualisieren' : 'Erstellen'}
+          {isEdit ? 'Update' : 'Create'}
         </button>
       </div>
     </div>
@@ -707,13 +707,13 @@ function SectionHeader({ children }: { children: React.ReactNode }): React.JSX.E
 function ViewToggle({ mode, onChange }: { mode: ViewMode; onChange: (m: ViewMode) => void }): React.JSX.Element {
   return (
     <div className="flex gap-0.5 bg-zinc-800/50 rounded-lg p-0.5 border border-zinc-700/30">
-      <button type="button" onClick={() => onChange('calendar')} title="Kalender"
+      <button type="button" onClick={() => onChange('calendar')} title="Calendar"
         className={`px-2 py-1 rounded-md text-xs transition-all duration-150 ${mode === 'calendar' ? 'bg-zinc-700/80 text-zinc-200 shadow-sm' : 'text-zinc-500 hover:text-zinc-300'}`}>
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" />
         </svg>
       </button>
-      <button type="button" onClick={() => onChange('list')} title="Liste"
+      <button type="button" onClick={() => onChange('list')} title="List"
         className={`px-2 py-1 rounded-md text-xs transition-all duration-150 ${mode === 'list' ? 'bg-zinc-700/80 text-zinc-200 shadow-sm' : 'text-zinc-500 hover:text-zinc-300'}`}>
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" />

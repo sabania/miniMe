@@ -94,39 +94,39 @@ describe('buildCron', () => {
 
 describe('describeCron', () => {
   it('interval minutes', () => {
-    expect(describeCron('*/15 * * * *')).toBe('Alle 15 min')
-    expect(describeCron('*/5 * * * *')).toBe('Alle 5 min')
+    expect(describeCron('*/15 * * * *')).toBe('Every 15 min')
+    expect(describeCron('*/5 * * * *')).toBe('Every 5 min')
   })
 
   it('interval hours', () => {
-    expect(describeCron('*/60 * * * *')).toBe('Alle 1h')
-    expect(describeCron('*/120 * * * *')).toBe('Alle 2h')
+    expect(describeCron('*/60 * * * *')).toBe('Every 1h')
+    expect(describeCron('*/120 * * * *')).toBe('Every 2h')
   })
 
   it('specific date (once)', () => {
-    expect(describeCron('30 14 15 3 *')).toBe('Einmalig 15.3. 14:30')
+    expect(describeCron('30 14 15 3 *')).toBe('Once 3/15 14:30')
   })
 
   it('daily', () => {
-    expect(describeCron('0 9 * * *')).toBe('Täglich 09:00')
+    expect(describeCron('0 9 * * *')).toBe('Daily 09:00')
   })
 
-  it('weekdays Mo-Fr', () => {
-    expect(describeCron('0 9 * * 1,2,3,4,5')).toBe('Mo-Fr 09:00')
-    expect(describeCron('0 9 * * 1-5')).toBe('Mo-Fr 09:00')
+  it('weekdays Mon-Fri', () => {
+    expect(describeCron('0 9 * * 1,2,3,4,5')).toBe('Mon-Fri 09:00')
+    expect(describeCron('0 9 * * 1-5')).toBe('Mon-Fri 09:00')
   })
 
   it('specific weekdays', () => {
-    expect(describeCron('30 10 * * 1,3,5')).toBe('Mo, Mi, Fr 10:30')
+    expect(describeCron('30 10 * * 1,3,5')).toBe('Mon, Wed, Fri 10:30')
   })
 
-  it('all weekdays = Täglich', () => {
-    expect(describeCron('0 8 * * 0,1,2,3,4,5,6')).toBe('Täglich 08:00')
+  it('all weekdays = Daily', () => {
+    expect(describeCron('0 8 * * 0,1,2,3,4,5,6')).toBe('Daily 08:00')
   })
 
   it('interval with hour range', () => {
-    expect(describeCron('*/30 7-23 * * *')).toBe('Alle 30 min (7-23 Uhr)')
-    expect(describeCron('*/15 8-18 * * *')).toBe('Alle 15 min (8-18 Uhr)')
+    expect(describeCron('*/30 7-23 * * *')).toBe('Every 30 min (7-23h)')
+    expect(describeCron('*/15 8-18 * * *')).toBe('Every 15 min (8-18h)')
   })
 
   it('complex cron passthrough', () => {
@@ -138,7 +138,7 @@ describe('describeCron', () => {
   })
 
   it('pads single-digit hours/minutes', () => {
-    expect(describeCron('5 8 * * *')).toBe('Täglich 08:05')
+    expect(describeCron('5 8 * * *')).toBe('Daily 08:05')
   })
 })
 

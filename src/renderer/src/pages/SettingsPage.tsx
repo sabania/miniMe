@@ -275,11 +275,11 @@ function AppIcon(): React.JSX.Element {
 /* ─── Danger Zone ───────────────────────────────────────────── */
 
 const RESET_OPTIONS: { key: string; label: string; tip: string; action: () => Promise<void> }[] = [
-  { key: 'settings', label: 'Settings', tip: 'Config auf Defaults', action: () => window.api.resetSettings() },
-  { key: 'conversations', label: 'Conversations', tip: 'Alle Gespraeche + Messages', action: () => window.api.resetConversations() },
-  { key: 'scheduler', label: 'Scheduler', tip: 'Alle Tasks (System-Tasks werden neu erstellt)', action: () => window.api.resetScheduler() },
-  { key: 'workspace', label: 'Workspace', tip: 'Memory, Templates, tmp/', action: () => window.api.resetWorkspace() },
-  { key: 'whatsapp', label: 'WhatsApp', tip: 'Disconnect + QR neu scannen', action: () => window.api.resetWhatsApp() }
+  { key: 'settings', label: 'Settings', tip: 'Reset config to defaults', action: () => window.api.resetSettings() },
+  { key: 'conversations', label: 'Conversations', tip: 'All conversations + messages', action: () => window.api.resetConversations() },
+  { key: 'scheduler', label: 'Scheduler', tip: 'All tasks (system tasks will be re-created)', action: () => window.api.resetScheduler() },
+  { key: 'workspace', label: 'Workspace', tip: 'Memory, templates, tmp/', action: () => window.api.resetWorkspace() },
+  { key: 'whatsapp', label: 'WhatsApp', tip: 'Disconnect + re-scan QR code', action: () => window.api.resetWhatsApp() }
 ]
 
 function DangerZone(): React.JSX.Element {
@@ -327,10 +327,10 @@ function DangerZone(): React.JSX.Element {
         window.location.reload()
         return
       }
-      setStatus('Reset erfolgreich.')
+      setStatus('Reset successful.')
       setTimeout(() => setStatus(null), 3000)
     } catch (err) {
-      setStatus(`Fehler: ${(err as Error).message}`)
+      setStatus(`Error: ${(err as Error).message}`)
     } finally {
       setRunning(false)
     }
@@ -446,7 +446,7 @@ function DangerZone(): React.JSX.Element {
           )}
 
           {status && (
-            <p className={`text-xs ${status.startsWith('Fehler') ? 'text-red-400' : 'text-green-400'}`}>
+            <p className={`text-xs ${status.startsWith('Error') ? 'text-red-400' : 'text-green-400'}`}>
               {status}
             </p>
           )}

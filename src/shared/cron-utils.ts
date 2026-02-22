@@ -49,14 +49,14 @@ export function describeCron(cronExpr: string): string {
   // Pure interval: */N every hour
   if (min.startsWith('*/') && hour === '*') {
     const n = parseInt(min.slice(2))
-    return n < 60 ? `Alle ${n} min` : `Alle ${Math.round(n / 60)}h`
+    return n < 60 ? `Every ${n} min` : `Every ${Math.round(n / 60)}h`
   }
 
   // Interval with hour range: */N during specific hours
   if (min.startsWith('*/') && hour !== '*') {
     const n = parseInt(min.slice(2))
-    const interval = n < 60 ? `Alle ${n} min` : `Alle ${Math.round(n / 60)}h`
-    return `${interval} (${hour} Uhr)`
+    const interval = n < 60 ? `Every ${n} min` : `Every ${Math.round(n / 60)}h`
+    return `${interval} (${hour}h)`
   }
 
   // Need simple numeric min + hour for a readable time string
@@ -67,19 +67,19 @@ export function describeCron(cronExpr: string): string {
   const timeStr = `${hour.padStart(2, '0')}:${min.padStart(2, '0')}`
 
   if (dom !== '*' && mon !== '*') {
-    return `Einmalig ${dom}.${mon}. ${timeStr}`
+    return `Once ${mon}/${dom} ${timeStr}`
   }
 
   if (dow !== '*') {
-    const dayMap: Record<string, string> = { '0': 'So', '1': 'Mo', '2': 'Di', '3': 'Mi', '4': 'Do', '5': 'Fr', '6': 'Sa' }
-    if (dow === '1,2,3,4,5' || dow === '1-5') return `Mo-Fr ${timeStr}`
-    if (dow === '0,1,2,3,4,5,6') return `Täglich ${timeStr}`
+    const dayMap: Record<string, string> = { '0': 'Sun', '1': 'Mon', '2': 'Tue', '3': 'Wed', '4': 'Thu', '5': 'Fri', '6': 'Sat' }
+    if (dow === '1,2,3,4,5' || dow === '1-5') return `Mon-Fri ${timeStr}`
+    if (dow === '0,1,2,3,4,5,6') return `Daily ${timeStr}`
 
     const days = dow.split(',').map((d) => dayMap[d] ?? d).join(', ')
     return `${days} ${timeStr}`
   }
 
-  return `Täglich ${timeStr}`
+  return `Daily ${timeStr}`
 }
 
 // ─── Cron Parsers ───────────────────────────────────────────

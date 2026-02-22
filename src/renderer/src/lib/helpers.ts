@@ -1,9 +1,9 @@
 export function formatDate(iso: string): string {
   const d = new Date(iso)
   return (
-    d.toLocaleDateString('de-CH', { day: '2-digit', month: '2-digit', year: '2-digit' }) +
+    d.toLocaleDateString('en-US', { day: '2-digit', month: '2-digit', year: '2-digit' }) +
     ' ' +
-    d.toLocaleTimeString('de-CH', { hour: '2-digit', minute: '2-digit' })
+    d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
   )
 }
 

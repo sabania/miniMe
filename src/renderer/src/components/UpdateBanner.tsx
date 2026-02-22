@@ -38,7 +38,7 @@ export function UpdateBanner(): React.JSX.Element | null {
           <line x1="12" y1="15" x2="12" y2="3" />
         </svg>
         <span className="text-blue-300">
-          Version <strong>{status.info.version}</strong> verfuegbar
+          Version <strong>{status.info.version}</strong> available
         </span>
         <div className="ml-auto flex items-center gap-2">
           <button
@@ -88,7 +88,7 @@ export function UpdateBanner(): React.JSX.Element | null {
           <polyline points="20 6 9 17 4 12" />
         </svg>
         <span className="text-green-300">
-          Update <strong>{status.info.version}</strong> bereit
+          Update <strong>{status.info.version}</strong> ready
         </span>
         <div className="ml-auto flex items-center gap-2">
           <button
