@@ -146,7 +146,9 @@ Start a task from your phone, sit down at your PC, continue with full context.
   <img src="docs/screenshots/projects.png" width="700" alt="Projects — linked directories" />
 </p>
 
-Go to **Projects** > **+ Add** and select any folder on your machine. It gets linked into the workspace and the agent can access it — read files, write code, run tests. The agent automatically detects new projects and tracks them in memory.
+Claude Code can technically reach any folder on your machine — but the agent doesn't know about them. **Link Projects** makes a folder visible inside the workspace so the agent can find it, navigate to it, and work on it across sessions. It also tracks each project in its memory (structure, tech stack, open tasks).
+
+Go to **Projects** > **+ Add** and select a folder. A directory junction appears in the workspace, and the agent can read files, write code, run tests, and execute commands inside it.
 
 ## Scheduled Tasks
 
@@ -167,24 +169,42 @@ Create your own with **+ Task**. The agent can also create tasks on its own.
   <img src="docs/screenshots/scheduler-new-task.png" width="700" alt="New scheduled task" />
 </p>
 
+## Workspace = Claude Code's cwd
+
+The workspace is the agent's working directory. Everything Claude Code normally reads from the current folder — `CLAUDE.md`, `.claude/settings.json`, `.claude/skills/`, MCP servers, hooks — lives here and works exactly the same way.
+
+This means you can extend the agent like you'd configure any Claude Code project:
+
+- **Add skills** in `.claude/skills/` — the agent picks them up
+- **Edit `CLAUDE.md`** to change instructions, rules, or behavior
+- **Configure MCP servers** in `.mcp.json` — same as on your machine
+- **Add hooks** in `.claude/settings.json` — pre/post tool execution
+- **Change `settings.json`** for allowed tools, permissions, model preferences
+
+Open the workspace in VS Code or any editor. Changes take effect on the next conversation.
+
 ## Memory
 
-The agent builds persistent memory in the workspace — files it can read and update across sessions:
+The agent also builds persistent memory in the workspace — files it reads and updates across sessions:
 
 ```
 workspace/
-├── SOUL.md           # Identity and communication style
-├── HEARTBEAT.md      # Proactive check instructions
+├── CLAUDE.md            # Main project instructions (read by Claude Code)
+├── SOUL.md              # Agent identity and communication style
+├── HEARTBEAT.md         # Proactive check instructions
+├── .claude/
+│   ├── settings.json    # Claude Code settings (permissions, hooks, etc.)
+│   └── skills/          # Skills (same as Claude Code skills)
 ├── memory/
-│   ├── CLAUDE.md     # Main index
-│   ├── user/         # What it knows about you
-│   ├── people/       # People in your life
-│   ├── projects/     # Project knowledge
-│   └── journal/      # Weekly notes & tasks
-└── .claude/skills/   # Skills (same as Claude Code skills)
+│   ├── CLAUDE.md        # Memory index
+│   ├── user/            # What it knows about you
+│   ├── people/          # People in your life
+│   ├── projects/        # Project knowledge
+│   └── journal/         # Weekly notes & tasks
+└── projects/            # Linked project directories
 ```
 
-These are regular files. Open the workspace in VS Code, edit them, add your own — the agent picks up changes on the next conversation. It's the same as configuring Claude Code on your machine.
+These are regular files. The agent updates them during conversations, before context compression, and during nightly consolidation (REM Sleep). All changes are git-tracked if git is enabled.
 
 ---
 
@@ -341,7 +361,9 @@ Starte einen Task vom Handy, setz dich an den PC, mach mit vollem Kontext weiter
   <img src="docs/screenshots/projects.png" width="700" alt="Projekte — verlinkte Verzeichnisse" />
 </p>
 
-**Projects** > **+ Add** und einen Ordner waehlen. Er wird in den Workspace verlinkt und der Agent kann darauf zugreifen — Dateien lesen, Code schreiben, Tests ausfuehren. Der Agent erkennt neue Projekte automatisch und trackt sie im Gedaechtnis.
+Claude Code kann technisch jeden Ordner auf deinem Rechner erreichen — aber der Agent weiss nichts davon. **Link Projects** macht einen Ordner im Workspace sichtbar, sodass der Agent ihn finden, dorthin navigieren und ueber Sessions hinweg darin arbeiten kann. Ausserdem trackt er jedes Projekt im Gedaechtnis (Struktur, Tech-Stack, offene Punkte).
+
+**Projects** > **+ Add** und einen Ordner waehlen. Eine Directory Junction erscheint im Workspace, und der Agent kann darin Dateien lesen, Code schreiben, Tests ausfuehren und Befehle starten.
 
 ## Geplante Tasks
 
@@ -362,24 +384,42 @@ Eigene Tasks erstellen mit **+ Task**. Der Agent kann auch selbst Tasks anlegen.
   <img src="docs/screenshots/scheduler-new-task.png" width="700" alt="Neuen Task erstellen" />
 </p>
 
+## Workspace = Claude Codes cwd
+
+Der Workspace ist das Arbeitsverzeichnis des Agents. Alles was Claude Code normalerweise aus dem aktuellen Ordner liest — `CLAUDE.md`, `.claude/settings.json`, `.claude/skills/`, MCP-Server, Hooks — liegt hier und funktioniert exakt gleich.
+
+Das heisst du kannst den Agent erweitern wie jedes Claude Code Projekt:
+
+- **Skills hinzufuegen** in `.claude/skills/` — der Agent nutzt sie
+- **`CLAUDE.md` bearbeiten** um Anweisungen, Regeln oder Verhalten zu aendern
+- **MCP-Server konfigurieren** in `.mcp.json` — wie auf deinem Rechner
+- **Hooks einrichten** in `.claude/settings.json` — vor/nach Tool-Ausfuehrung
+- **`settings.json` aendern** fuer erlaubte Tools, Permissions, Model-Praeferenzen
+
+Oeffne den Workspace in VS Code oder einem beliebigen Editor. Aenderungen greifen bei der naechsten Konversation.
+
 ## Gedaechtnis
 
-Der Agent baut ein persistentes Gedaechtnis im Workspace auf — Dateien die er ueber Sessions hinweg lesen und aktualisieren kann:
+Der Agent baut ausserdem ein persistentes Gedaechtnis im Workspace auf — Dateien die er ueber Sessions hinweg liest und aktualisiert:
 
 ```
 workspace/
-├── SOUL.md           # Identitaet und Kommunikationsstil
-├── HEARTBEAT.md      # Anleitung fuer proaktive Checks
+├── CLAUDE.md            # Projekt-Anweisungen (von Claude Code gelesen)
+├── SOUL.md              # Agent-Identitaet und Kommunikationsstil
+├── HEARTBEAT.md         # Anleitung fuer proaktive Checks
+├── .claude/
+│   ├── settings.json    # Claude Code Settings (Permissions, Hooks, etc.)
+│   └── skills/          # Skills (wie Claude Code Skills)
 ├── memory/
-│   ├── CLAUDE.md     # Hauptindex
-│   ├── user/         # Was er ueber dich weiss
-│   ├── people/       # Personen in deinem Leben
-│   ├── projects/     # Projekt-Wissen
-│   └── journal/      # Woechentliche Notizen & Tasks
-└── .claude/skills/   # Skills (wie Claude Code Skills)
+│   ├── CLAUDE.md        # Gedaechtnis-Index
+│   ├── user/            # Was er ueber dich weiss
+│   ├── people/          # Personen in deinem Leben
+│   ├── projects/        # Projekt-Wissen
+│   └── journal/         # Woechentliche Notizen & Tasks
+└── projects/            # Verlinkte Projekt-Verzeichnisse
 ```
 
-Das sind ganz normale Dateien. Oeffne den Workspace in VS Code, bearbeite sie, fuege eigene hinzu — der Agent uebernimmt Aenderungen in der naechsten Konversation. Genau wie Claude Code auf deinem Rechner konfigurieren.
+Das sind ganz normale Dateien. Der Agent aktualisiert sie waehrend Konversationen, vor Context-Kompression und bei der naechtlichen Konsolidierung (REM Sleep). Alle Aenderungen sind git-getrackt wenn Git aktiviert ist.
 
 ---
 
