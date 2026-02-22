@@ -17,14 +17,24 @@ Same tools, same permissions, same configuration — just reachable from your ph
 
 ## 1. Install Claude Code
 
-miniMe runs [Claude Code](https://docs.anthropic.com/en/docs/claude-code) under the hood. Install it first:
+miniMe runs [Claude Code](https://code.claude.com/docs/en/setup) under the hood. Install it first:
 
-```bash
-npm install -g @anthropic-ai/claude-code
-claude  # follow the auth flow
+**Windows PowerShell:**
+```powershell
+irm https://claude.ai/install.ps1 | iex
 ```
 
-Set your [Anthropic API key](https://console.anthropic.com/) as `ANTHROPIC_API_KEY` environment variable, or authenticate via Claude Code's built-in auth.
+**macOS / Linux / WSL:**
+```bash
+curl -fsSL https://claude.ai/install.sh | bash
+```
+
+Then authenticate:
+```bash
+claude
+```
+
+Sign in with your [Claude Pro/Max](https://claude.ai/pricing) account or [Anthropic API key](https://console.anthropic.com/).
 
 ## 2. Install miniMe
 
@@ -132,7 +142,11 @@ Start a task from your phone, sit down at your PC, continue with full context.
 
 ## Link Projects
 
-Go to **Projects** > **+ Project** and select any folder on your machine. The agent can access it — read files, write code, run tests. Each project appears as a junction inside the workspace.
+<p align="center">
+  <img src="docs/screenshots/projects.png" width="700" alt="Projects — linked directories" />
+</p>
+
+Go to **Projects** > **+ Add** and select any folder on your machine. It gets linked into the workspace and the agent can access it — read files, write code, run tests. The agent automatically detects new projects and tracks them in memory.
 
 ## Scheduled Tasks
 
@@ -198,14 +212,24 @@ These are regular files. Open the workspace in VS Code, edit them, add your own 
 
 ## 1. Claude Code installieren
 
-miniMe nutzt [Claude Code](https://docs.anthropic.com/en/docs/claude-code) im Hintergrund. Zuerst installieren:
+miniMe nutzt [Claude Code](https://code.claude.com/docs/en/setup) im Hintergrund. Zuerst installieren:
 
-```bash
-npm install -g @anthropic-ai/claude-code
-claude  # Authentifizierung durchlaufen
+**Windows PowerShell:**
+```powershell
+irm https://claude.ai/install.ps1 | iex
 ```
 
-[Anthropic API Key](https://console.anthropic.com/) als `ANTHROPIC_API_KEY` Umgebungsvariable setzen, oder ueber die eingebaute Auth von Claude Code authentifizieren.
+**macOS / Linux / WSL:**
+```bash
+curl -fsSL https://claude.ai/install.sh | bash
+```
+
+Dann authentifizieren:
+```bash
+claude
+```
+
+Einloggen mit [Claude Pro/Max](https://claude.ai/pricing) Account oder [Anthropic API Key](https://console.anthropic.com/).
 
 ## 2. miniMe installieren
 
@@ -313,7 +337,11 @@ Starte einen Task vom Handy, setz dich an den PC, mach mit vollem Kontext weiter
 
 ## Projekte einbinden
 
-**Projects** > **+ Project** und einen Ordner waehlen. Der Agent kann darauf zugreifen — Dateien lesen, Code schreiben, Tests ausfuehren. Jedes Projekt erscheint als Junction im Workspace.
+<p align="center">
+  <img src="docs/screenshots/projects.png" width="700" alt="Projekte — verlinkte Verzeichnisse" />
+</p>
+
+**Projects** > **+ Add** und einen Ordner waehlen. Er wird in den Workspace verlinkt und der Agent kann darauf zugreifen — Dateien lesen, Code schreiben, Tests ausfuehren. Der Agent erkennt neue Projekte automatisch und trackt sie im Gedaechtnis.
 
 ## Geplante Tasks
 
