@@ -185,18 +185,18 @@ Open the workspace in VS Code or any editor. Changes take effect on the next con
 
 ## Memory
 
-The agent also builds persistent memory in the workspace — files it reads and updates across sessions:
+The agent builds persistent memory in the workspace — structured files it reads and updates across sessions:
 
 ```
 workspace/
-├── CLAUDE.md            # Main project instructions (read by Claude Code)
+├── CLAUDE.md            # Main instructions (read by Claude Code)
 ├── SOUL.md              # Agent identity and communication style
 ├── HEARTBEAT.md         # Proactive check instructions
 ├── .claude/
 │   ├── settings.json    # Claude Code settings (permissions, hooks, etc.)
 │   └── skills/          # Skills (same as Claude Code skills)
 ├── memory/
-│   ├── CLAUDE.md        # Memory index
+│   ├── CLAUDE.md        # Memory index — routing table for all knowledge
 │   ├── user/            # What it knows about you
 │   ├── people/          # People in your life
 │   ├── projects/        # Project knowledge
@@ -204,7 +204,90 @@ workspace/
 └── projects/            # Linked project directories
 ```
 
-These are regular files. The agent updates them during conversations, before context compression, and during nightly consolidation (REM Sleep). All changes are git-tracked if git is enabled.
+### How memory is connected
+
+Claude Code has a limited context window. The agent can't load everything at once — so the memory is organized as a network of linked files, loaded in tiers:
+
+```mermaid
+graph TD
+    subgraph L0["L0 — Always in context"]
+        CLAUDE["CLAUDE.md<br/><i>main instructions</i>"]
+        SOUL["SOUL.md<br/><i>identity & style</i>"]
+        MEM_IDX["memory/CLAUDE.md<br/><i>routing table</i>"]
+        PROJ_IDX["memory/projects/CLAUDE.md<br/><i>project overview</i>"]
+    end
+
+    subgraph L1["L1 — Auto-loaded on access"]
+        PEOPLE_IDX["memory/people/CLAUDE.md"]
+        DECISIONS["memory/decisions/CLAUDE.md"]
+        META["memory/meta/CLAUDE.md"]
+        LOCAL["CLAUDE.local.md<br/><i>user profile & contacts</i>"]
+    end
+
+    subgraph L2["L2 — On demand"]
+        USER_PREFS["memory/user/preferences.md"]
+        USER_PAT["memory/user/patterns.md"]
+        PERSON["memory/people/&lt;name&gt;.md"]
+        PROJECT["memory/projects/&lt;name&gt;.md"]
+        JOURNAL["memory/journal/_current-week.md"]
+        STRATEGY["memory/meta/strategy.md"]
+    end
+
+    CLAUDE -- "@import" --> SOUL
+    CLAUDE -- "@import" --> MEM_IDX
+    CLAUDE -- "@import" --> PROJ_IDX
+
+    MEM_IDX -. "routing table" .-> USER_PREFS
+    MEM_IDX -. "routing table" .-> USER_PAT
+    MEM_IDX -. "routing table" .-> PEOPLE_IDX
+    MEM_IDX -. "routing table" .-> DECISIONS
+    MEM_IDX -. "routing table" .-> JOURNAL
+
+    PROJ_IDX -. "detail file" .-> PROJECT
+    PEOPLE_IDX -. "detail file" .-> PERSON
+    META -. "detail file" .-> STRATEGY
+
+    style L0 fill:#1a1a2e,stroke:#4a9eff,color:#fff
+    style L1 fill:#1a1a2e,stroke:#f5a623,color:#fff
+    style L2 fill:#1a1a2e,stroke:#888,color:#fff
+```
+
+**How it works:** `CLAUDE.md` uses `@`-references to pull `SOUL.md`, `memory/CLAUDE.md`, and the project index into every session automatically. The memory index acts as a **routing table** — it maps topics to files with trigger keywords, so the agent knows where to look without loading everything. Each folder's `CLAUDE.md` auto-loads when the agent works in that folder.
+
+### When the agent learns
+
+The agent doesn't save things randomly — three mechanisms ensure nothing important gets lost:
+
+```mermaid
+graph LR
+    CONV["Conversation"] --> STOP["Stop hook<br/><i>quick-save on<br/>session end</i>"]
+    CONV --> |"context 90% full"| PC["PreCompact hook<br/><i>save everything<br/>before compression</i>"]
+    CRON["03:00 schedule"] --> REM["REM Sleep<br/><i>nightly consolidation</i>"]
+
+    STOP --> MEM["memory/"]
+    PC --> MEM
+    REM --> MEM
+
+    REM --> |"deduplicate"| MEM
+    REM --> |"archive old"| MEM
+    REM --> |"update indexes"| MEM
+    REM --> |"plan tomorrow"| SCHED["Scheduler"]
+
+    MEM --> GIT["git commit"]
+
+    style STOP fill:#334155,stroke:#94a3b8,color:#fff
+    style PC fill:#1e3a5f,stroke:#4a9eff,color:#fff
+    style REM fill:#1a2e1a,stroke:#4ade80,color:#fff
+    style MEM fill:#1a1a2e,stroke:#a78bfa,color:#fff
+```
+
+| Trigger | When | What happens |
+|---------|------|-------------|
+| **PreCompact** | Context window ~90% full | Claude Code is about to compress older messages to free up space. Right before that, this hook fires — the agent writes down insights, decisions, and open work so nothing gets lost in the compression. |
+| **Stop** | Session ends | Quick-save: the agent checks if anything worth remembering came up (max 1-2 entries). |
+| **REM Sleep** | Nightly at 03:00 | Full maintenance: deduplicate knowledge, archive completed projects, update all indexes, apply decay rules (remove stale entries), review strategy, and plan the next day. |
+
+All memory changes are git-tracked if git is enabled, so nothing is ever truly lost.
 
 ---
 
@@ -400,18 +483,18 @@ Oeffne den Workspace in VS Code oder einem beliebigen Editor. Aenderungen greife
 
 ## Gedaechtnis
 
-Der Agent baut ausserdem ein persistentes Gedaechtnis im Workspace auf — Dateien die er ueber Sessions hinweg liest und aktualisiert:
+Der Agent baut ein persistentes Gedaechtnis im Workspace auf — strukturierte Dateien die er ueber Sessions hinweg liest und aktualisiert:
 
 ```
 workspace/
-├── CLAUDE.md            # Projekt-Anweisungen (von Claude Code gelesen)
+├── CLAUDE.md            # Haupt-Anweisungen (von Claude Code gelesen)
 ├── SOUL.md              # Agent-Identitaet und Kommunikationsstil
 ├── HEARTBEAT.md         # Anleitung fuer proaktive Checks
 ├── .claude/
 │   ├── settings.json    # Claude Code Settings (Permissions, Hooks, etc.)
 │   └── skills/          # Skills (wie Claude Code Skills)
 ├── memory/
-│   ├── CLAUDE.md        # Gedaechtnis-Index
+│   ├── CLAUDE.md        # Gedaechtnis-Index — Routing-Tabelle fuer alles Wissen
 │   ├── user/            # Was er ueber dich weiss
 │   ├── people/          # Personen in deinem Leben
 │   ├── projects/        # Projekt-Wissen
@@ -419,7 +502,90 @@ workspace/
 └── projects/            # Verlinkte Projekt-Verzeichnisse
 ```
 
-Das sind ganz normale Dateien. Der Agent aktualisiert sie waehrend Konversationen, vor Context-Kompression und bei der naechtlichen Konsolidierung (REM Sleep). Alle Aenderungen sind git-getrackt wenn Git aktiviert ist.
+### Wie das Gedaechtnis vernetzt ist
+
+Claude Code hat ein begrenztes Context-Fenster. Der Agent kann nicht alles gleichzeitig laden — deshalb ist das Gedaechtnis als Netzwerk verlinkter Dateien organisiert, in Stufen geladen:
+
+```mermaid
+graph TD
+    subgraph L0["L0 — Immer im Context"]
+        CLAUDE["CLAUDE.md<br/><i>Haupt-Anweisungen</i>"]
+        SOUL["SOUL.md<br/><i>Identitaet & Stil</i>"]
+        MEM_IDX["memory/CLAUDE.md<br/><i>Routing-Tabelle</i>"]
+        PROJ_IDX["memory/projects/CLAUDE.md<br/><i>Projekt-Uebersicht</i>"]
+    end
+
+    subgraph L1["L1 — Auto-geladen bei Zugriff"]
+        PEOPLE_IDX["memory/people/CLAUDE.md"]
+        DECISIONS["memory/decisions/CLAUDE.md"]
+        META["memory/meta/CLAUDE.md"]
+        LOCAL["CLAUDE.local.md<br/><i>User-Profil & Kontakte</i>"]
+    end
+
+    subgraph L2["L2 — Bei Bedarf"]
+        USER_PREFS["memory/user/preferences.md"]
+        USER_PAT["memory/user/patterns.md"]
+        PERSON["memory/people/&lt;name&gt;.md"]
+        PROJECT["memory/projects/&lt;name&gt;.md"]
+        JOURNAL["memory/journal/_current-week.md"]
+        STRATEGY["memory/meta/strategy.md"]
+    end
+
+    CLAUDE -- "@import" --> SOUL
+    CLAUDE -- "@import" --> MEM_IDX
+    CLAUDE -- "@import" --> PROJ_IDX
+
+    MEM_IDX -. "Routing-Tabelle" .-> USER_PREFS
+    MEM_IDX -. "Routing-Tabelle" .-> USER_PAT
+    MEM_IDX -. "Routing-Tabelle" .-> PEOPLE_IDX
+    MEM_IDX -. "Routing-Tabelle" .-> DECISIONS
+    MEM_IDX -. "Routing-Tabelle" .-> JOURNAL
+
+    PROJ_IDX -. "Detail-Datei" .-> PROJECT
+    PEOPLE_IDX -. "Detail-Datei" .-> PERSON
+    META -. "Detail-Datei" .-> STRATEGY
+
+    style L0 fill:#1a1a2e,stroke:#4a9eff,color:#fff
+    style L1 fill:#1a1a2e,stroke:#f5a623,color:#fff
+    style L2 fill:#1a1a2e,stroke:#888,color:#fff
+```
+
+**So funktioniert's:** `CLAUDE.md` zieht ueber `@`-Referenzen `SOUL.md`, `memory/CLAUDE.md` und den Projekt-Index automatisch in jede Session. Der Memory-Index ist eine **Routing-Tabelle** — er mappt Themen auf Dateien mit Trigger-Keywords, sodass der Agent weiss wo er nachschauen muss ohne alles zu laden. Jede `CLAUDE.md` in einem Ordner wird automatisch geladen wenn der Agent dort arbeitet.
+
+### Wann der Agent lernt
+
+Der Agent speichert nicht zufaellig — drei Mechanismen sorgen dafuer, dass nichts Wichtiges verloren geht:
+
+```mermaid
+graph LR
+    CONV["Konversation"] --> STOP["Stop-Hook<br/><i>Quick-Save bei<br/>Session-Ende</i>"]
+    CONV --> |"Context 90% voll"| PC["PreCompact-Hook<br/><i>Alles sichern vor<br/>Kompression</i>"]
+    CRON["03:00 Zeitplan"] --> REM["REM Sleep<br/><i>Naechtliche Konsolidierung</i>"]
+
+    STOP --> MEM["memory/"]
+    PC --> MEM
+    REM --> MEM
+
+    REM --> |"Deduplizieren"| MEM
+    REM --> |"Altes archivieren"| MEM
+    REM --> |"Indexe updaten"| MEM
+    REM --> |"Morgen planen"| SCHED["Scheduler"]
+
+    MEM --> GIT["git commit"]
+
+    style STOP fill:#334155,stroke:#94a3b8,color:#fff
+    style PC fill:#1e3a5f,stroke:#4a9eff,color:#fff
+    style REM fill:#1a2e1a,stroke:#4ade80,color:#fff
+    style MEM fill:#1a1a2e,stroke:#a78bfa,color:#fff
+```
+
+| Trigger | Wann | Was passiert |
+|---------|------|-------------|
+| **PreCompact** | Context-Fenster ~90% voll | Claude Code komprimiert gleich aeltere Nachrichten um Platz zu schaffen. Kurz vorher feuert dieser Hook — der Agent schreibt Erkenntnisse, Entscheidungen und offene Arbeit auf, damit nichts bei der Kompression verloren geht. |
+| **Stop** | Session endet | Quick-Save: Agent prueft ob etwas Merkenswertes passiert ist (max 1-2 Eintraege). |
+| **REM Sleep** | Naechtlich um 03:00 | Volle Wartung: Wissen deduplizieren, abgeschlossene Projekte archivieren, alle Indexe updaten, Decay-Regeln anwenden (veraltete Eintraege entfernen), Strategie reviewen und den naechsten Tag planen. |
+
+Alle Gedaechtnis-Aenderungen sind git-getrackt wenn Git aktiviert ist — nichts geht wirklich verloren.
 
 ---
 
