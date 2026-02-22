@@ -44,3 +44,17 @@ git add memory/ SOUL.md && git commit -m "Was gelernt wurde"
 - Commit Messages: WAS gelernt wurde, nicht "updated files"
 - Gute Granularitaet: nicht nach jeder Kleinigkeit, aber auch nicht alles in einen Commit
 - `.claude/` mit `-f` flag adden (in .gitignore)
+
+## Projekte & Git-Repos
+- `projects/` enthaelt Junctions (Symlinks) zu externen Host-Pfaden — die echten Dateien liegen ausserhalb des Workspace
+- Jedes Projekt kann ein **eigenes, unabhaengiges git-Repo** sein (mit eigenem `.git/`)
+- Workspace-git (`git add memory/ SOUL.md`) und Projekt-git sind **getrennt** — nie vermischen
+- Wenn ich in einem Projekt arbeite: `cd projects/<name>` und dort normal git verwenden
+```
+# Im Projekt-Repo arbeiten:
+git -C projects/<name> status
+git -C projects/<name> add .
+git -C projects/<name> commit -m "Was geaendert wurde"
+```
+- Workspace-git trackt nur: `memory/`, `SOUL.md`, `HEARTBEAT.md`
+- Projekt-git trackt: alles im jeweiligen Projekt-Verzeichnis

@@ -44,3 +44,17 @@ git add memory/ SOUL.md && git commit -m "What was learned"
 - Commit messages: WHAT was learned, not "updated files"
 - Good granularity: not after every tiny change, but don't batch everything into one commit
 - `.claude/` add with `-f` flag (in .gitignore)
+
+## Projects & Git Repos
+- `projects/` contains junctions (symlinks) to external host paths — the actual files live outside the workspace
+- Each project can be an **independent git repo** with its own `.git/`
+- Workspace git (`git add memory/ SOUL.md`) and project git are **separate** — never mix them
+- When working in a project: use git within that project directory
+```
+# Working in a project repo:
+git -C projects/<name> status
+git -C projects/<name> add .
+git -C projects/<name> commit -m "What was changed"
+```
+- Workspace git tracks only: `memory/`, `SOUL.md`, `HEARTBEAT.md`
+- Project git tracks: everything in the respective project directory
