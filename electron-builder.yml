@@ -1,0 +1,57 @@
+appId: com.minime.app
+productName: miniMe
+directories:
+  buildResources: build
+files:
+  - '!**/.vscode/*'
+  - '!src/*'
+  - '!electron.vite.config.{js,ts,mjs,cjs}'
+  - '!{.env,.env.*,.npmrc,pnpm-lock.yaml}'
+  - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}'
+  - '!{konzept,backlog}/**/*'
+extraResources:
+  - from: "resources/templates"
+    to: "templates"
+    filter:
+      - "**/*"
+asarUnpack:
+  - resources/**
+win:
+  executableName: minime
+nsis:
+  artifactName: ${name}-${version}-setup.${ext}
+  shortcutName: ${productName}
+  uninstallDisplayName: ${productName}
+  createDesktopShortcut: always
+  deleteAppDataOnUninstall: true
+  include: "build/installer.nsh"
+linux:
+  executableName: minime
+  icon: build/icon.png
+  category: Utility
+  target:
+    - target: AppImage
+      arch:
+        - x64
+    - target: deb
+      arch:
+        - x64
+appImage:
+  artifactName: ${name}-${version}-${arch}.${ext}
+deb:
+  artifactName: ${name}-${version}-${arch}.${ext}
+  depends:
+    - libgtk-3-0
+    - libnotify4
+    - libnss3
+    - libxss1
+    - libxtst6
+    - xdg-utils
+    - libatspi2.0-0
+    - libuuid1
+    - libappindicator3-1
+npmRebuild: true
+publish:
+  provider: github
+  owner: sabania
+  repo: minime

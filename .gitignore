@@ -1,0 +1,18 @@
+node_modules/
+dist/
+out/
+data/
+.DS_Store
+*.log*
+*.d.ts
+*.js.map
+src/**/*.js
+electron.vite.config.js
+tsconfig.node.tsbuildinfo
+tsconfig.web.tsbuildinfo
+
+# Lokal — nicht publishen
+backlog/
+konzept/
+mcp/
+NUL
