@@ -11,6 +11,10 @@ Same tools, same permissions, same configuration — just reachable from your ph
 
 </div>
 
+**English** &nbsp;·&nbsp; [Quick Start](#quick-start) · [It's Just Claude Code](#its-just-claude-code) · [What miniMe Adds](#what-minime-adds) · [Settings](#settings)
+
+**Deutsch** &nbsp;·&nbsp; [Schnellstart](#schnellstart) · [Es ist einfach Claude Code](#es-ist-einfach-claude-code) · [Was miniMe dazu gibt](#was-minime-dazu-gibt) · [Einstellungen](#einstellungen)
+
 ---
 
 # Quick Start
