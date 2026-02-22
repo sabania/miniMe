@@ -54,4 +54,4 @@ npmRebuild: true
 publish:
   provider: github
   owner: sabania
-  repo: minime
+  repo: miniMe
