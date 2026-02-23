@@ -20,3 +20,12 @@ CLAUDE.md
 
 # Terminal Paste Image folder
 .cp-images/
+
+# Presentation (local only)
+docs/presentation/
+
+# Claude Code (local only)
+.claude/*
+
+# VsCode settings
+.vscode/
