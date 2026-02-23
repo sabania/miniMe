@@ -1,8 +1,7 @@
 <div align="center">
 
-# miniMe <a href="https://buymeacoffee.com/swissnlphero" target="_blank">
-  <img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" height="50">
-</a>
+# miniMe [![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-ffdd00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/swissnlphero)
+
 
 **Claude Code — on WhatsApp.**
 
