@@ -4,7 +4,8 @@ import makeWASocket, {
   fetchLatestBaileysVersion,
   downloadMediaMessage,
   type WASocket,
-  type WAMessage
+  type WAMessage,
+  type AnyMessageContent
 } from '@whiskeysockets/baileys'
 import { Boom } from '@hapi/boom'
 import pino from 'pino'
@@ -29,6 +30,7 @@ type MessageHandler = (jid: string, content: string, pushName?: string) => void
 let sock: WASocket | null = null
 let status: WhatsAppState['status'] = 'disconnected'
 let ownJid: string | null = null
+let ownLid: string | null = null
 let qrCode: string | null = null
 let stopped = false
 let lastSendTime = 0
@@ -93,7 +95,16 @@ function mimeToExt(mime: string): string {
   return map[mime] ?? `.${mime.split('/')[1]?.split(';')[0] ?? 'bin'}`
 }
 
-function buildMediaContent(filePath: string, caption?: string): Record<string, unknown> {
+const DOC_MIMETYPES: Record<string, string> = {
+  '.pdf': 'application/pdf', '.doc': 'application/msword',
+  '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  '.xls': 'application/vnd.ms-excel',
+  '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  '.pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  '.zip': 'application/zip', '.txt': 'text/plain', '.csv': 'text/csv'
+}
+
+function buildMediaContent(filePath: string, caption?: string): AnyMessageContent {
   const ext = extname(filePath).toLowerCase()
   const imageExts = ['.jpg', '.jpeg', '.png', '.gif', '.webp']
   const videoExts = ['.mp4', '.mkv', '.avi']
@@ -103,7 +114,8 @@ function buildMediaContent(filePath: string, caption?: string): Record<string, u
   if (videoExts.includes(ext)) return { video: { url: filePath }, caption: caption || undefined }
   if (audioExts.includes(ext)) return { audio: { url: filePath }, mimetype: ext === '.ogg' ? 'audio/ogg; codecs=opus' : 'audio/mpeg' }
   const fileName = filePath.split(/[/\\]/).pop() ?? 'file'
-  return { document: { url: filePath }, fileName, caption: caption || undefined }
+  const mimetype = DOC_MIMETYPES[ext] ?? 'application/octet-stream'
+  return { document: { url: filePath }, mimetype, fileName, caption: caption || undefined }
 }
 
 // ─── Connection ─────────────────────────────────────────────
@@ -146,6 +158,7 @@ export async function connect(): Promise<void> {
       qrCode = null
       reconnectAttempts = 0
       ownJid = sock?.user?.id ? normalizeJid(sock.user.id) : null
+      ownLid = sock?.user?.lid ? normalizeJid(sock.user.lid) : null
       if (ownJid) {
         setTypedConfig('whatsappJid', ownJid)
         // Auto-create owner contact if none exists
@@ -178,6 +191,7 @@ export async function connect(): Promise<void> {
       sock = null
       status = 'disconnected'
       ownJid = null
+      ownLid = null
       qrCode = null
       emitState()
 
@@ -213,9 +227,12 @@ export async function connect(): Promise<void> {
 
       const remoteJid = msg.key.remoteJid!
 
-      // Self-chat: allow messages from own JID or @lid
+      // Self-chat: allow messages from own JID or own LID
       const isSelfChat =
-        msg.key.fromMe && (remoteJid === ownJid || remoteJid.endsWith('@lid'))
+        msg.key.fromMe && (
+          remoteJid === ownJid ||
+          (ownLid != null && normalizeJid(remoteJid) === ownLid)
+        )
 
       // Skip other fromMe messages (sent from other devices etc.)
       if (msg.key.fromMe && !isSelfChat) continue
@@ -308,6 +325,7 @@ export async function disconnect(): Promise<void> {
   }
   status = 'disconnected'
   ownJid = null
+  ownLid = null
   qrCode = null
   emitState()
 }

@@ -154,6 +154,23 @@ function scaffoldFile(srcRelative: string, destPath: string): void {
 }
 
 /**
+ * Recursively copy all files from srcDir into destDir.
+ * Overwrites existing files (app-versioned). Does NOT delete user-created files.
+ */
+function copyDirRecursive(srcDir: string, destDir: string): void {
+  mkdirSync(destDir, { recursive: true })
+  for (const entry of readdirSync(srcDir)) {
+    const srcPath = join(srcDir, entry)
+    const destPath = join(destDir, entry)
+    if (statSync(srcPath).isDirectory()) {
+      copyDirRecursive(srcPath, destPath)
+    } else {
+      copyFileSync(srcPath, destPath)
+    }
+  }
+}
+
+/**
  * Initialize workspace as a git repo (if git is available).
  * Creates .gitignore, initial commit. Safe to call repeatedly.
  */
@@ -262,13 +279,13 @@ function _doScaffold(ws: string): void {
   scaffoldFile('memory/journal/_current-week.md', join(ws, 'memory', 'journal', '_current-week.md'))
 
   // 4. Skills — always overwrite (app-versioned, not user content)
-  const skillNames = ['memory-save', 'memory-recall', 'project-context', 'contact-lookup', 'task-context', 'rem-sleep']
+  //    Recursive copy so companion files (e.g. scripts/) are deployed too.
+  const skillNames = ['memory-save', 'memory-recall', 'project-context', 'contact-lookup', 'task-context', 'rem-sleep', 'outlook', 'whisper-transcribe']
   for (const name of skillNames) {
-    const src = join(getTemplatesDir(), '.claude', 'skills', name, 'SKILL.md')
-    const dest = join(ws, '.claude', 'skills', name, 'SKILL.md')
-    if (existsSync(src)) {
-      mkdirSync(join(dest, '..'), { recursive: true })
-      copyFileSync(src, dest)
+    const srcDir = join(getTemplatesDir(), '.claude', 'skills', name)
+    const destDir = join(ws, '.claude', 'skills', name)
+    if (existsSync(srcDir)) {
+      copyDirRecursive(srcDir, destDir)
     }
   }
 
@@ -402,36 +419,19 @@ function mergeHooksConfig(ws: string): void {
 
   const hooks = (settings.hooks ?? {}) as Record<string, unknown[]>
 
-  hooks.Stop = [
-    {
-      hooks: [
-        {
-          type: 'prompt',
-          prompt:
-            'Session-Ende: Wenn diese Query etwas Wichtiges produziert hat ' +
-            '(neue Erkenntnis, Entscheidung, Fehler, User-Fakt), dann kurz in memory/ festhalten ' +
-            '— max 1-2 Eintraege. Active Context in memory/CLAUDE.md updaten wenn noetig. ' +
-            'Sonst einfach stoppen. Kein Full-Learning — das macht PreCompact.',
-          timeout: 30
-        }
-      ]
-    }
-  ]
-
   hooks.PreCompact = [
     {
       hooks: [
         {
-          type: 'prompt',
-          prompt:
-            'LEARNING TRIGGER — Context wird komprimiert! ' +
-            'Jetzt alles Wichtige aus dieser Session sichern bevor es verloren geht:\n' +
-            '1. Erkenntnisse, Entscheidungen, Patterns, Anti-Patterns → memory/ schreiben\n' +
-            '2. User-Praeferenzen oder neue Fakten → memory/user/ updaten\n' +
-            '3. Offene Punkte, laufende Arbeit → Status in memory/ dokumentieren\n' +
-            '4. Alle betroffenen CLAUDE.md Indexe aktualisieren\n' +
-            '5. git add memory/ SOUL.md && git commit -m "Was gelernt: ..."',
-          timeout: 90
+          type: 'command',
+          command:
+            'echo LEARNING TRIGGER — Context wird komprimiert! ' +
+            'Jetzt alles Wichtige aus dieser Session sichern bevor es verloren geht: ' +
+            '1. Erkenntnisse, Entscheidungen, Patterns, Anti-Patterns → memory/ schreiben ' +
+            '2. User-Praeferenzen oder neue Fakten → memory/user/ updaten ' +
+            '3. Offene Punkte, laufende Arbeit → Status in memory/ dokumentieren ' +
+            '4. Alle betroffenen CLAUDE.md Indexe aktualisieren ' +
+            '5. git add memory/ SOUL.md && git commit -m Was gelernt: ...'
         }
       ]
     }
