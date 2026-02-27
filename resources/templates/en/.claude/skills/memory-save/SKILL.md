@@ -31,6 +31,7 @@ Create or update files in memory/ by topic:
 7. Document new projects (including local workspace ones) in memory/projects/
 8. Git commit after changes:
    ```
-   git add memory/ SOUL.md
+   git add memory/ SOUL.md CLAUDE.md .claude/skills/
    git commit -m "Description of what was learned"
    ```
+   → Full git workflow: memory/meta/procedures.md

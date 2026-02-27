@@ -431,7 +431,7 @@ function mergeHooksConfig(ws: string): void {
             '2. User-Praeferenzen oder neue Fakten → memory/user/ updaten ' +
             '3. Offene Punkte, laufende Arbeit → Status in memory/ dokumentieren ' +
             '4. Alle betroffenen CLAUDE.md Indexe aktualisieren ' +
-            '5. git add memory/ SOUL.md && git commit -m Was gelernt: ...'
+            '5. git add memory/ SOUL.md CLAUDE.md .claude/skills/ && git commit -m Was gelernt: ...'
         }
       ]
     }
