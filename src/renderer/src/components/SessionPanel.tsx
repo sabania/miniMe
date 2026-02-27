@@ -145,11 +145,13 @@ function formatDiskDate(iso: string): string {
 
 function ImportDropdown({
   diskSessions,
+  isLoading,
   onImport,
   onClose
 }: {
   diskSessions: DiskSession[]
-  onImport: (sessionId: string, projectSlug: string) => void
+  isLoading: boolean
+  onImport: (sessionId: string, projectSlug: string, cwd?: string | null) => void
   onClose: () => void
 }): React.JSX.Element {
   const ref = useRef<HTMLDivElement>(null)
@@ -163,29 +165,39 @@ function ImportDropdown({
   }, [onClose])
 
   return (
-    <div ref={ref} className="absolute top-full left-0 right-0 mt-1 z-30 bg-zinc-900 border border-zinc-700/60 rounded-lg shadow-2xl overflow-hidden">
+    <div
+      ref={ref}
+      className="z-50 bg-zinc-900 border border-zinc-700/60 rounded-lg shadow-2xl overflow-hidden"
+    >
       <div className="px-3 py-2 border-b border-zinc-800/80 flex items-center gap-2">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-zinc-400">
           <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
         </svg>
         <span className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider">Disk Sessions</span>
-        <span className="text-[10px] text-zinc-600 ml-auto">{diskSessions.length}</span>
+        <span className="text-[10px] text-zinc-600 ml-auto">{isLoading ? '...' : diskSessions.length}</span>
       </div>
       <div className="max-h-72 overflow-y-auto">
-        {diskSessions.length === 0 && (
+        {isLoading && (
+          <div className="px-3 py-6 text-center">
+            <div className="inline-block h-4 w-4 border-2 border-zinc-600 border-t-zinc-300 rounded-full animate-spin" />
+            <p className="text-zinc-500 text-xs mt-2">Loading sessions...</p>
+          </div>
+        )}
+        {!isLoading && diskSessions.length === 0 && (
           <div className="px-3 py-6 text-center">
             <p className="text-zinc-500 text-xs">No sessions found on disk</p>
             <p className="text-zinc-600 text-[10px] mt-1">~/.claude/projects/ is empty</p>
           </div>
         )}
-        {diskSessions.map((ds) => {
+        {!isLoading && diskSessions.map((ds) => {
           const imported = !!ds.linkedConversationId
+          const msgLabel = ds.messageCount === -1 ? '20+ messages' : `${ds.messageCount} messages`
           return (
             <button
               key={`${ds.projectSlug}/${ds.sessionId}`}
               type="button"
               disabled={imported}
-              onClick={() => onImport(ds.sessionId, ds.projectSlug)}
+              onClick={() => onImport(ds.sessionId, ds.projectSlug, ds.cwd)}
               className={`w-full text-left px-3 py-2 border-b border-zinc-800/40 transition-colors ${
                 imported
                   ? 'opacity-50 cursor-default'
@@ -207,8 +219,8 @@ function ImportDropdown({
               {ds.firstPrompt && (
                 <p className="text-[10px] text-zinc-500 mt-0.5 truncate">&quot;{ds.firstPrompt}&quot;</p>
               )}
-              {!ds.firstPrompt && ds.messageCount > 0 && (
-                <p className="text-[10px] text-zinc-600 mt-0.5">{ds.messageCount} messages</p>
+              {!ds.firstPrompt && ds.messageCount !== 0 && (
+                <p className="text-[10px] text-zinc-600 mt-0.5">{msgLabel}</p>
               )}
             </button>
           )
@@ -223,6 +235,7 @@ export function SessionPanel({
   selectedId,
   agentState,
   diskSessions,
+  isDiskSessionsLoading,
   onSelect,
   onNewSession,
   onDelete,
@@ -233,10 +246,11 @@ export function SessionPanel({
   selectedId: string | null
   agentState: AgentState
   diskSessions: DiskSession[]
+  isDiskSessionsLoading: boolean
   onSelect: (id: string) => void
   onNewSession: () => void
   onDelete: (id: string) => void
-  onImportDiskSession: (sessionId: string, projectSlug: string) => void
+  onImportDiskSession: (sessionId: string, projectSlug: string, cwd?: string | null) => void
   onLoadDiskSessions: () => void
 }): React.JSX.Element {
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
@@ -247,12 +261,12 @@ export function SessionPanel({
 
   return (
     <div className="w-64 flex-shrink-0 flex flex-col border-r border-zinc-800/80 bg-zinc-950">
-      <div className="flex items-center justify-between px-3 py-2.5 border-b border-zinc-800/80 relative">
+      <div className="flex items-center justify-between px-3 py-2.5 border-b border-zinc-800/80">
         <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Sessions</span>
         <div className="flex items-center gap-1.5">
           <button
             type="button"
-            onClick={() => { onLoadDiskSessions(); setShowImport(!showImport) }}
+            onClick={() => { if (!showImport) onLoadDiskSessions(); setShowImport(!showImport) }}
             title="Import disk session"
             className={`px-2 py-1 rounded-md text-xs font-medium transition-colors duration-200 ${
               showImport
@@ -274,14 +288,15 @@ export function SessionPanel({
             + New
           </button>
         </div>
-        {showImport && (
-          <ImportDropdown
-            diskSessions={diskSessions}
-            onImport={(sid, slug) => { onImportDiskSession(sid, slug); setShowImport(false) }}
-            onClose={() => setShowImport(false)}
-          />
-        )}
       </div>
+      {showImport && (
+        <ImportDropdown
+          diskSessions={diskSessions}
+          isLoading={isDiskSessionsLoading}
+          onImport={(sid, slug, cwd) => { onImportDiskSession(sid, slug, cwd); setShowImport(false) }}
+          onClose={() => setShowImport(false)}
+        />
+      )}
 
       <div className="flex-1 overflow-y-auto p-2 space-y-0.5">
         {/* Empty state */}

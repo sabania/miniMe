@@ -155,16 +155,17 @@ export function registerIpcHandlers(): void {
     return listDiskSessions(workspacePath)
   })
 
-  ipcMain.handle('diskSessions:import', async (_e, sessionId: string, projectSlug: string) => {
+  ipcMain.handle('diskSessions:import', async (_e, sessionId: string, projectSlug: string, cwdOverride?: string) => {
     const active = db.getActiveConversation()
     if (active) db.closeConversation(active.id)
     bridge.abort()
 
-    const cwd = decodeProjectSlug(projectSlug)
+    const cwd = cwdOverride || decodeProjectSlug(projectSlug)
     const convId = randomUUID()
     const mode = getTypedConfig('permissionMode')
     db.createConversation(convId, cwd, mode)
     db.updateConversation(convId, { sdkSessionId: sessionId })
+    db.resumeConversation(convId)
     return convId
   })
 
@@ -365,6 +366,7 @@ export function registerIpcHandlers(): void {
     stopScheduler()
     await whatsapp.disconnect()
     whatsapp.deleteCredentials()
+    workspace.removeAllJunctions() // remove junctions safely before DB wipe
     db.resetDatabase()
     initDefaults()
     startScheduler()

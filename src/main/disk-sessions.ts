@@ -36,10 +36,21 @@ interface HistoryEntry {
   timestamp: string
 }
 
+const HISTORY_TTL_MS = 30_000
+let _historyCache: Map<string, HistoryEntry> | null = null
+let _historyCacheTime = 0
+
 function loadHistoryMap(): Map<string, HistoryEntry> {
+  const now = Date.now()
+  if (_historyCache && now - _historyCacheTime < HISTORY_TTL_MS) return _historyCache
+
   const historyPath = join(homedir(), '.claude', 'history.jsonl')
   const map = new Map<string, HistoryEntry>()
-  if (!existsSync(historyPath)) return map
+  if (!existsSync(historyPath)) {
+    _historyCache = map
+    _historyCacheTime = now
+    return map
+  }
 
   try {
     const content = readFileSync(historyPath, 'utf-8')
@@ -64,6 +75,8 @@ function loadHistoryMap(): Map<string, HistoryEntry> {
   } catch {
     // history file unreadable
   }
+  _historyCache = map
+  _historyCacheTime = now
   return map
 }
 
@@ -90,6 +103,12 @@ async function parseJsonlHead(filePath: string, maxLines = 20): Promise<SessionM
     const stream = createReadStream(filePath, { encoding: 'utf-8', highWaterMark: 16 * 1024 })
     const rl = createInterface({ input: stream, crlfDelay: Infinity })
     let lineCount = 0
+    let resolved = false
+    const done = (): void => {
+      if (resolved) return
+      resolved = true
+      resolve(meta)
+    }
 
     rl.on('line', (line) => {
       lineCount++
@@ -110,13 +129,15 @@ async function parseJsonlHead(filePath: string, maxLines = 20): Promise<SessionM
         // skip malformed lines
       }
       if (lineCount >= maxLines) {
+        meta.messageCount = -1
         rl.close()
         stream.destroy()
+        done()
       }
     })
 
-    rl.on('close', () => resolve(meta))
-    rl.on('error', () => resolve(meta))
+    rl.on('close', done)
+    rl.on('error', done)
   })
 }
 
@@ -126,23 +147,9 @@ export async function listDiskSessions(workspacePath: string): Promise<DiskSessi
   const claudeProjectsDir = join(homedir(), '.claude', 'projects')
   if (!existsSync(claudeProjectsDir)) return []
 
-  // Derive the slug for the workspace path
+  // Only scan the workspace slug — user only sees their own sessions
   const workspaceSlug = pathToProjectSlug(workspacePath)
-
-  // Also scan the repo slug (miniMe project root)
-  const slugsToScan = new Set<string>([workspaceSlug])
-
-  // Scan all project directories for broader coverage
-  try {
-    const entries = readdirSync(claudeProjectsDir, { withFileTypes: true })
-    for (const entry of entries) {
-      if (entry.isDirectory()) {
-        slugsToScan.add(entry.name)
-      }
-    }
-  } catch {
-    // can't read projects dir
-  }
+  const slugsToScan = [workspaceSlug]
 
   // Build a set of known sdkSessionIds from DB
   const knownSessions = new Map<string, string>()

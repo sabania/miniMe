@@ -70,6 +70,7 @@ function App(): React.JSX.Element {
   const [messages, setMessages] = useState<Message[]>([])
   const [activeCwd, setActiveCwd] = useState('')
   const [diskSessions, setDiskSessions] = useState<DiskSession[]>([])
+  const [isDiskSessionsLoading, setIsDiskSessionsLoading] = useState(false)
 
   // Refs for polling (avoid stale closures)
   const selectedIdRef = useRef(selectedId)
@@ -149,12 +150,17 @@ function App(): React.JSX.Element {
   }
 
   const loadDiskSessions = async (): Promise<void> => {
-    const sessions = await window.api.getDiskSessions()
-    setDiskSessions(sessions)
+    setIsDiskSessionsLoading(true)
+    try {
+      const sessions = await window.api.getDiskSessions()
+      setDiskSessions(sessions)
+    } finally {
+      setIsDiskSessionsLoading(false)
+    }
   }
 
-  const handleImportDiskSession = async (sessionId: string, projectSlug: string): Promise<void> => {
-    const newId = await window.api.importDiskSession(sessionId, projectSlug)
+  const handleImportDiskSession = async (sessionId: string, projectSlug: string, cwd?: string | null): Promise<void> => {
+    const newId = await window.api.importDiskSession(sessionId, projectSlug, cwd ?? undefined)
     await loadConversations()
     setSelectedId(newId)
     showToast('Session imported')
@@ -250,6 +256,7 @@ function App(): React.JSX.Element {
               selectedId={selectedId}
               agentState={agentState}
               diskSessions={diskSessions}
+              isDiskSessionsLoading={isDiskSessionsLoading}
               onSelect={setSelectedId}
               onNewSession={handleNewSession}
               onDelete={handleDelete}

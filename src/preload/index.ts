@@ -110,8 +110,8 @@ const api: IpcApi = {
 
   // Disk Sessions
   getDiskSessions: () => ipcRenderer.invoke('diskSessions:list') as Promise<DiskSession[]>,
-  importDiskSession: (sessionId: string, projectSlug: string) =>
-    ipcRenderer.invoke('diskSessions:import', sessionId, projectSlug) as Promise<string>,
+  importDiskSession: (sessionId: string, projectSlug: string, cwd?: string) =>
+    ipcRenderer.invoke('diskSessions:import', sessionId, projectSlug, cwd) as Promise<string>,
 
   // Shell
   openFolder: (path: string) => ipcRenderer.invoke('shell:openFolder', path),

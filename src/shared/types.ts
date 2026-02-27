@@ -231,7 +231,7 @@ export interface IpcApi {
 
   // Disk Sessions
   getDiskSessions(): Promise<DiskSession[]>
-  importDiskSession(sessionId: string, projectSlug: string): Promise<string>
+  importDiskSession(sessionId: string, projectSlug: string, cwd?: string): Promise<string>
 
   // Shell
   openFolder(path: string): Promise<void>

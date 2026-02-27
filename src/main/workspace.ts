@@ -296,10 +296,13 @@ function _doScaffold(ws: string): void {
   generateCLAUDEmd()
   generateUserProfile()
 
-  // 7. Clean up old media files
+  // 7. Recreate project junctions from DB (preserved across workspace reset)
+  recreateJunctions()
+
+  // 8. Clean up old media files
   cleanupOldMedia(ws)
 
-  // 8. Initialize git repo (tracks memory/ and SOUL.md history)
+  // 9. Initialize git repo (tracks memory/ and SOUL.md history)
   initGitRepo(ws)
 
   console.log('[workspace] Scaffold complete:', ws)
@@ -340,9 +343,43 @@ export function forceScaffoldWorkspace(): void {
   _doScaffold(ws)
 }
 
-/** Delete workspace and re-scaffold from scratch */
+/** Safely remove all project junctions (link only, never target content). */
+export function removeAllJunctions(): void {
+  for (const project of getProjects()) {
+    try {
+      removeJunction(project.junctionPath)
+    } catch (err) {
+      console.warn(`[workspace] Failed to remove junction ${project.junctionPath}:`, err)
+    }
+  }
+}
+
+/** Recreate project junctions from DB records (e.g. after workspace reset). */
+export function recreateJunctions(): void {
+  const workspacePath = getTypedConfig('workspacePath')
+  const projectsDir = join(workspacePath, 'projects')
+  mkdirSync(projectsDir, { recursive: true })
+
+  for (const project of getProjects()) {
+    const junctionPath = join(projectsDir, project.name)
+    if (existsSync(junctionPath)) continue
+    if (!existsSync(project.hostPath)) {
+      console.warn(`[workspace] Skipping junction for ${project.name}: host path missing: ${project.hostPath}`)
+      continue
+    }
+    try {
+      symlinkSync(project.hostPath, junctionPath, process.platform === 'win32' ? 'junction' : 'dir')
+      console.log(`[workspace] Recreated junction: ${project.name} → ${project.hostPath}`)
+    } catch (err) {
+      console.warn(`[workspace] Failed to recreate junction ${project.name}:`, err)
+    }
+  }
+}
+
+/** Delete workspace and re-scaffold from scratch. Junctions are safely removed first, then recreated after scaffold. */
 export function resetWorkspace(): void {
   const ws = getTypedConfig('workspacePath')
+  removeAllJunctions()
   rmSync(ws, { recursive: true, force: true })
   // Don't auto-scaffold — caller will show language dialog first
 }
