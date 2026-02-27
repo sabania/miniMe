@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import type { WhatsAppState, AgentState, Conversation, Message } from '../../shared/types'
+import type { WhatsAppState, AgentState, Conversation, Message, DiskSession } from '../../shared/types'
 
 import { StatusHeader } from './components/StatusHeader'
 import { UpdateBanner } from './components/UpdateBanner'
@@ -69,6 +69,7 @@ function App(): React.JSX.Element {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
   const [activeCwd, setActiveCwd] = useState('')
+  const [diskSessions, setDiskSessions] = useState<DiskSession[]>([])
 
   // Refs for polling (avoid stale closures)
   const selectedIdRef = useRef(selectedId)
@@ -145,6 +146,18 @@ function App(): React.JSX.Element {
     const newId = await window.api.newConversation()
     await loadConversations()
     setSelectedId(newId ?? null)
+  }
+
+  const loadDiskSessions = async (): Promise<void> => {
+    const sessions = await window.api.getDiskSessions()
+    setDiskSessions(sessions)
+  }
+
+  const handleImportDiskSession = async (sessionId: string, projectSlug: string): Promise<void> => {
+    const newId = await window.api.importDiskSession(sessionId, projectSlug)
+    await loadConversations()
+    setSelectedId(newId)
+    showToast('Session imported')
   }
 
   const handleDelete = async (id: string): Promise<void> => {
@@ -236,9 +249,12 @@ function App(): React.JSX.Element {
               conversations={conversations}
               selectedId={selectedId}
               agentState={agentState}
+              diskSessions={diskSessions}
               onSelect={setSelectedId}
               onNewSession={handleNewSession}
               onDelete={handleDelete}
+              onImportDiskSession={handleImportDiskSession}
+              onLoadDiskSessions={loadDiskSessions}
             />
             <div className="flex-1 flex flex-col overflow-hidden">
               {selectedConv ? (

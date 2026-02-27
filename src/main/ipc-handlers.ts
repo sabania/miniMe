@@ -9,6 +9,7 @@ import * as workspace from './workspace'
 import { isGitAvailable, initGitRepo, initAllProjectGits, workspaceNeedsSetup, forceScaffoldWorkspace } from './workspace'
 import { syncScheduledTasks, getSchedulerStatus, stopScheduler, startScheduler } from './scheduler'
 import { getCachedModels, fetchModels } from './agent'
+import { listDiskSessions, decodeProjectSlug } from './disk-sessions'
 import { getUpdateStatus, checkForUpdates, downloadUpdate, installUpdate } from './updater'
 import type { ConfigKey, PermissionResponse, ScheduledTask } from '../shared/types'
 
@@ -146,6 +147,25 @@ export function registerIpcHandlers(): void {
     execFile('code', [conv.cwd], { shell: true }, (err) => {
       if (err) console.error('[ipc] Failed to open VS Code:', err.message)
     })
+  })
+
+  // ─── Disk Sessions ─────────────────────────────────────
+  ipcMain.handle('diskSessions:list', async () => {
+    const workspacePath = getTypedConfig('workspacePath')
+    return listDiskSessions(workspacePath)
+  })
+
+  ipcMain.handle('diskSessions:import', async (_e, sessionId: string, projectSlug: string) => {
+    const active = db.getActiveConversation()
+    if (active) db.closeConversation(active.id)
+    bridge.abort()
+
+    const cwd = decodeProjectSlug(projectSlug)
+    const convId = randomUUID()
+    const mode = getTypedConfig('permissionMode')
+    db.createConversation(convId, cwd, mode)
+    db.updateConversation(convId, { sdkSessionId: sessionId })
+    return convId
   })
 
   // ─── Projects ───────────────────────────────────────────

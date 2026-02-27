@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
-import type { ConfigKey, PermissionResponse, WhatsAppState, AgentState, Contact, ScheduledTask, SchedulerLogEntry, UpdateStatus, IpcApi } from '../shared/types'
+import type { ConfigKey, PermissionResponse, WhatsAppState, AgentState, Contact, ScheduledTask, SchedulerLogEntry, UpdateStatus, DiskSession, IpcApi } from '../shared/types'
 
 const api: IpcApi = {
   // Config
@@ -107,6 +107,11 @@ const api: IpcApi = {
     ipcRenderer.on('updater:status', handler)
     return () => { ipcRenderer.removeListener('updater:status', handler) }
   },
+
+  // Disk Sessions
+  getDiskSessions: () => ipcRenderer.invoke('diskSessions:list') as Promise<DiskSession[]>,
+  importDiskSession: (sessionId: string, projectSlug: string) =>
+    ipcRenderer.invoke('diskSessions:import', sessionId, projectSlug) as Promise<string>,
 
   // Shell
   openFolder: (path: string) => ipcRenderer.invoke('shell:openFolder', path),

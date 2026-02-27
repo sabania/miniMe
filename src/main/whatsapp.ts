@@ -3,6 +3,7 @@ import makeWASocket, {
   DisconnectReason,
   fetchLatestBaileysVersion,
   downloadMediaMessage,
+  Browsers,
   type WASocket,
   type WAMessage,
   type AnyMessageContent
@@ -138,7 +139,7 @@ export async function connect(): Promise<void> {
     auth: state,
     version,
     logger: pino({ level: 'silent' }) as never,
-    browser: ['miniMe', 'Desktop', '1.0'],
+    browser: Browsers.windows('Desktop'),
     syncFullHistory: false,
     markOnlineOnConnect: false,
     getMessage: async () => undefined

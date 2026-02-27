@@ -144,6 +144,22 @@ export type UpdateStatus =
   | { state: 'downloaded'; info: UpdateInfo }
   | { state: 'error'; message: string }
 
+// ─── Disk Sessions ─────────────────────────────────────────
+
+export interface DiskSession {
+  sessionId: string
+  projectSlug: string
+  projectPath: string
+  cwd: string | null
+  gitBranch: string | null
+  firstPrompt: string | null
+  messageCount: number
+  createdAt: string
+  lastModified: string
+  fileSizeBytes: number
+  linkedConversationId: string | null
+}
+
 // ─── IPC Channels ───────────────────────────────────────────
 
 export interface IpcApi {
@@ -212,6 +228,10 @@ export interface IpcApi {
   installUpdate(): Promise<void>
   getAppVersion(): Promise<string>
   onUpdateStatus(callback: (status: UpdateStatus) => void): () => void
+
+  // Disk Sessions
+  getDiskSessions(): Promise<DiskSession[]>
+  importDiskSession(sessionId: string, projectSlug: string): Promise<string>
 
   // Shell
   openFolder(path: string): Promise<void>

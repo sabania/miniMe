@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { formatDate } from '../lib/helpers'
-import type { Conversation, AgentState } from '../../../shared/types'
+import type { Conversation, AgentState, DiskSession } from '../../../shared/types'
 
 function formatDuration(startIso: string, endIso?: string | null): string {
   const start = new Date(startIso).getTime()
@@ -131,37 +131,156 @@ function SessionItem({
   )
 }
 
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes}B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)}KB`
+  return `${(bytes / (1024 * 1024)).toFixed(1)}MB`
+}
+
+function formatDiskDate(iso: string): string {
+  const d = new Date(iso)
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) +
+    ' ' + d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+}
+
+function ImportDropdown({
+  diskSessions,
+  onImport,
+  onClose
+}: {
+  diskSessions: DiskSession[]
+  onImport: (sessionId: string, projectSlug: string) => void
+  onClose: () => void
+}): React.JSX.Element {
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const handler = (e: MouseEvent): void => {
+      if (ref.current && !ref.current.contains(e.target as Node)) onClose()
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [onClose])
+
+  return (
+    <div ref={ref} className="absolute top-full left-0 right-0 mt-1 z-30 bg-zinc-900 border border-zinc-700/60 rounded-lg shadow-2xl overflow-hidden">
+      <div className="px-3 py-2 border-b border-zinc-800/80 flex items-center gap-2">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-zinc-400">
+          <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+        </svg>
+        <span className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider">Disk Sessions</span>
+        <span className="text-[10px] text-zinc-600 ml-auto">{diskSessions.length}</span>
+      </div>
+      <div className="max-h-72 overflow-y-auto">
+        {diskSessions.length === 0 && (
+          <div className="px-3 py-6 text-center">
+            <p className="text-zinc-500 text-xs">No sessions found on disk</p>
+            <p className="text-zinc-600 text-[10px] mt-1">~/.claude/projects/ is empty</p>
+          </div>
+        )}
+        {diskSessions.map((ds) => {
+          const imported = !!ds.linkedConversationId
+          return (
+            <button
+              key={`${ds.projectSlug}/${ds.sessionId}`}
+              type="button"
+              disabled={imported}
+              onClick={() => onImport(ds.sessionId, ds.projectSlug)}
+              className={`w-full text-left px-3 py-2 border-b border-zinc-800/40 transition-colors ${
+                imported
+                  ? 'opacity-50 cursor-default'
+                  : 'hover:bg-zinc-800/60 cursor-pointer'
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] text-zinc-300">{formatDiskDate(ds.lastModified)}</span>
+                {ds.gitBranch && (
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-800/60 text-zinc-500">{ds.gitBranch}</span>
+                )}
+                {imported && (
+                  <span className="text-[10px] text-green-500/70 ml-auto">imported</span>
+                )}
+                {!imported && (
+                  <span className="text-[10px] text-zinc-600 ml-auto">{formatFileSize(ds.fileSizeBytes)}</span>
+                )}
+              </div>
+              {ds.firstPrompt && (
+                <p className="text-[10px] text-zinc-500 mt-0.5 truncate">&quot;{ds.firstPrompt}&quot;</p>
+              )}
+              {!ds.firstPrompt && ds.messageCount > 0 && (
+                <p className="text-[10px] text-zinc-600 mt-0.5">{ds.messageCount} messages</p>
+              )}
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 export function SessionPanel({
   conversations,
   selectedId,
   agentState,
+  diskSessions,
   onSelect,
   onNewSession,
-  onDelete
+  onDelete,
+  onImportDiskSession,
+  onLoadDiskSessions
 }: {
   conversations: Conversation[]
   selectedId: string | null
   agentState: AgentState
+  diskSessions: DiskSession[]
   onSelect: (id: string) => void
   onNewSession: () => void
   onDelete: (id: string) => void
+  onImportDiskSession: (sessionId: string, projectSlug: string) => void
+  onLoadDiskSessions: () => void
 }): React.JSX.Element {
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
+  const [showImport, setShowImport] = useState(false)
 
   const active = conversations.filter((c) => c.status === 'active')
   const closed = conversations.filter((c) => c.status === 'closed')
 
   return (
     <div className="w-64 flex-shrink-0 flex flex-col border-r border-zinc-800/80 bg-zinc-950">
-      <div className="flex items-center justify-between px-3 py-2.5 border-b border-zinc-800/80">
+      <div className="flex items-center justify-between px-3 py-2.5 border-b border-zinc-800/80 relative">
         <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Sessions</span>
-        <button
-          type="button"
-          onClick={onNewSession}
-          className="px-2.5 py-1 bg-blue-600 hover:bg-blue-500 rounded-md text-xs font-medium transition-colors duration-200 hover:shadow-sm hover:shadow-blue-500/20"
-        >
-          + New
-        </button>
+        <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={() => { onLoadDiskSessions(); setShowImport(!showImport) }}
+            title="Import disk session"
+            className={`px-2 py-1 rounded-md text-xs font-medium transition-colors duration-200 ${
+              showImport
+                ? 'bg-zinc-700 text-zinc-200'
+                : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-zinc-200'
+            }`}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="inline-block">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+          </button>
+          <button
+            type="button"
+            onClick={onNewSession}
+            className="px-2.5 py-1 bg-blue-600 hover:bg-blue-500 rounded-md text-xs font-medium transition-colors duration-200 hover:shadow-sm hover:shadow-blue-500/20"
+          >
+            + New
+          </button>
+        </div>
+        {showImport && (
+          <ImportDropdown
+            diskSessions={diskSessions}
+            onImport={(sid, slug) => { onImportDiskSession(sid, slug); setShowImport(false) }}
+            onClose={() => setShowImport(false)}
+          />
+        )}
       </div>
 
       <div className="flex-1 overflow-y-auto p-2 space-y-0.5">
