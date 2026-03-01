@@ -284,7 +284,10 @@ function _doScaffold(ws: string): void {
 
   // 4. Skills — always overwrite (app-versioned, not user content)
   //    Recursive copy so companion files (e.g. scripts/) are deployed too.
-  const skillNames = ['memory-save', 'memory-recall', 'project-context', 'contact-lookup', 'task-context', 'rem-sleep', 'outlook', 'whisper-transcribe']
+  const platformSkills: string[] =
+    process.platform === 'darwin' ? ['macos-pim'] :
+    process.platform === 'win32'  ? ['outlook'] : []
+  const skillNames = ['memory-save', 'memory-recall', 'project-context', 'contact-lookup', 'task-context', 'rem-sleep', ...platformSkills, 'whisper-transcribe']
   for (const name of skillNames) {
     const srcDir = join(getTemplatesDir(), '.claude', 'skills', name)
     const destDir = join(ws, '.claude', 'skills', name)

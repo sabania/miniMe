@@ -38,20 +38,9 @@ Ready-to-use PowerShell scripts are in `scripts/`. All output JSON.
 - `read-calendar.ps1`: `-Days N` (default 7)
 - `search-emails.ps1`: `-Count N` (default 20)
 
-## macOS — Create Your Own Scripts
+## macOS
 
-No macOS scripts are shipped. Create your own `scripts/*.sh` using `osascript` as needed — they persist in the skill directory.
-
-Example structure for `scripts/read-emails.sh`:
-```bash
-#!/bin/bash
-COUNT=${1:-10}
-osascript -e "
-tell application \"Microsoft Outlook\"
-  set msgs to messages 1 thru $COUNT of inbox
-  -- Build JSON output ...
-end tell"
-```
+On macOS, the `macos-pim` skill handles Mail, Calendar and Contacts via osascript (Apple Mail, Calendar.app, Contacts.app). This skill is Windows-only.
 
 ## Guidelines
 
