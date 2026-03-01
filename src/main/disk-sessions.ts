@@ -1,8 +1,9 @@
 import { homedir } from 'os'
-import { join, sep } from 'path'
+import { join } from 'path'
 import { readdirSync, statSync, readFileSync, existsSync, createReadStream } from 'fs'
 import { createInterface } from 'readline'
 import * as db from './db'
+import { platform } from './platform'
 import type { DiskSession } from '../shared/types'
 
 // ─── Slug helpers ────────────────────────────────────────────
@@ -14,18 +15,9 @@ export function pathToProjectSlug(p: string): string {
   return p.replace(/[^a-zA-Z0-9]/g, '-')
 }
 
-/** Decode a project slug back to a Windows/Linux path */
+/** Decode a project slug back to an absolute path (platform-aware) */
 export function decodeProjectSlug(slug: string): string {
-  // "C--Users-asa-..." → "C:\Users\asa\..."
-  // Detect drive letter: slug starts with a single letter followed by '--'
-  const driveMatch = slug.match(/^([A-Z])--(.*)/i)
-  if (driveMatch) {
-    const drive = driveMatch[1]
-    const rest = driveMatch[2].replace(/-/g, sep)
-    return `${drive}:${sep}${rest}`
-  }
-  // Linux-style: slug starts with '-' (from leading /)
-  return slug.replace(/-/g, '/')
+  return platform.decodeProjectSlug(slug)
 }
 
 // ─── History cache ───────────────────────────────────────────

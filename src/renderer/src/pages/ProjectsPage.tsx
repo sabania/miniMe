@@ -135,7 +135,7 @@ export function ProjectsPage(): React.JSX.Element {
                   type="text"
                   value={newPath}
                   onChange={(e) => setNewPath(e.target.value)}
-                  placeholder="Host path (e.g. C:\Users\...)"
+                  placeholder="Host path (e.g. /Users/... or C:\Users\...)"
                   className="flex-1 rounded-md border border-zinc-700/50 bg-zinc-900/50 px-3 py-2 text-sm text-zinc-200 placeholder:text-zinc-500 focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-blue-500/20 transition-all"
                 />
                 <button

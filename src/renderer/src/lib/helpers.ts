@@ -11,6 +11,9 @@ export function shortenPath(p: string): string {
   // Windows: C:\Users\name\... → ~\...
   const winHome = p.match(/^[A-Z]:\\Users\\[^\\]+/)?.[0]
   if (winHome) return '~' + p.slice(winHome.length)
+  // macOS: /Users/name/... → ~/...
+  const macHome = p.match(/^\/Users\/[^/]+/)?.[0]
+  if (macHome) return '~' + p.slice(macHome.length)
   // Linux: /home/name/... → ~/...
   const linuxHome = p.match(/^\/home\/[^/]+/)?.[0]
   if (linuxHome) return '~' + p.slice(linuxHome.length)

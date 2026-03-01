@@ -3,6 +3,7 @@ import { execSync } from 'child_process'
 import { existsSync, readFileSync } from 'fs'
 import { ensurePermissionsAtCwd } from './workspace'
 import { createSchedulerMcpServer } from './mcp-scheduler'
+import { platform } from './platform'
 
 // ─── Types ──────────────────────────────────────────────────
 
@@ -108,20 +109,7 @@ function findClaudeExecutable(): string {
   if (cachedClaudePath) return cachedClaudePath
 
   const home = process.env.USERPROFILE ?? process.env.HOME ?? ''
-
-  // Common locations
-  const candidates =
-    process.platform === 'win32'
-      ? [
-          join(home, '.local', 'bin', 'claude.exe'),
-          join(process.env.APPDATA ?? '', 'npm', 'claude.cmd'),
-          join(process.env.APPDATA ?? '', 'npm', 'claude')
-        ]
-      : [
-          join(home, '.local', 'bin', 'claude'),
-          '/usr/local/bin/claude',
-          '/usr/bin/claude'
-        ]
+  const candidates = platform.claudeExecutableCandidates(home)
 
   for (const p of candidates) {
     if (p && existsSync(p)) {
@@ -133,8 +121,7 @@ function findClaudeExecutable(): string {
 
   // Fallback: ask the system
   try {
-    const cmd = process.platform === 'win32' ? 'where.exe claude' : 'which claude'
-    const result = execSync(cmd, { encoding: 'utf-8', timeout: 5000 })
+    const result = execSync(platform.whichCommand('claude'), { encoding: 'utf-8', timeout: 5000 })
       .trim()
       .split('\n')[0]
       .trim()

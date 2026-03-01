@@ -138,7 +138,14 @@ app.whenReady().then(async () => {
   }
 
   app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow()
+    const win = BrowserWindow.getAllWindows()[0]
+    if (win) {
+      if (!win.isVisible()) win.show()
+      if (win.isMinimized()) win.restore()
+      win.focus()
+    } else {
+      createWindow()
+    }
   })
 })
 

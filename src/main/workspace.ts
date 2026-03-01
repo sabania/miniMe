@@ -68,7 +68,7 @@ export function initAllProjectGits(): void {
 }
 
 /**
- * Create a Windows Directory Junction from workspace/projects/<name> → hostPath.
+ * Create a directory junction (Windows) or symlink (macOS/Linux) from workspace/projects/<name> → hostPath.
  * Uses Node.js native fs.symlinkSync (no shell execution).
  * Returns the junction path.
  */
@@ -105,8 +105,7 @@ export function createJunction(name: string, hostPath: string): string {
 }
 
 /**
- * Remove a Windows Directory Junction (only the link, not the target content).
- * Uses Node.js native fs.rmdirSync (no shell execution).
+ * Remove a directory junction (Windows) or symlink (macOS/Linux) — only the link, not the target content.
  */
 export function removeJunction(junctionPath: string): void {
   if (!existsSync(junctionPath)) return
@@ -116,8 +115,13 @@ export function removeJunction(junctionPath: string): void {
     throw new Error(`Not a junction: "${junctionPath}"`)
   }
 
-  // rmdirSync removes the junction link without touching the target directory
-  rmdirSync(junctionPath)
+  if (stat.isSymbolicLink()) {
+    // macOS/Linux: symlinks are files, must use unlinkSync
+    unlinkSync(junctionPath)
+  } else {
+    // Windows: junctions are directories, use rmdirSync
+    rmdirSync(junctionPath)
+  }
 }
 
 // ─── First-Run Detection ─────────────────────────────────────

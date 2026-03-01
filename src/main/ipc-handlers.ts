@@ -1,5 +1,5 @@
 import { app, ipcMain, dialog, shell, BrowserWindow } from 'electron'
-import { execFile, spawn } from 'child_process'
+import { execFile } from 'child_process'
 import { randomUUID } from 'crypto'
 import { getTypedConfig, setTypedConfig, getAllTypedConfig, isValidConfigKey, initDefaults } from './config'
 import * as db from './db'
@@ -11,6 +11,7 @@ import { syncScheduledTasks, getSchedulerStatus, stopScheduler, startScheduler }
 import { getCachedModels, fetchModels } from './agent'
 import { listDiskSessions, decodeProjectSlug } from './disk-sessions'
 import { getUpdateStatus, checkForUpdates, downloadUpdate, installUpdate } from './updater'
+import { platform } from './platform'
 import type { ConfigKey, PermissionResponse, ScheduledTask } from '../shared/types'
 
 export function registerIpcHandlers(): void {
@@ -96,48 +97,11 @@ export function registerIpcHandlers(): void {
   ipcMain.handle('session:openTerminal', (_e, convId: string) => {
     const conv = db.getConversations().find((c) => c.id === convId)
     if (!conv) throw new Error('Conversation not found')
-    const cwd = conv.cwd
-    const args = conv.sdkSessionId
-      ? ['--resume', conv.sdkSessionId]
-      : []
+    const args = conv.sdkSessionId ? ['--resume', conv.sdkSessionId] : []
 
-    // Clean env: remove CLAUDECODE so claude CLI doesn't think it's nested
     const cleanEnv = { ...process.env }
     delete cleanEnv.CLAUDECODE
-
-    if (process.platform === 'win32') {
-      // Windows: try Windows Terminal, fallback to cmd.exe
-      const wtProcess = spawn('wt', ['-d', cwd, '--', 'claude', ...args], {
-        detached: true,
-        stdio: 'ignore',
-        env: cleanEnv
-      })
-      wtProcess.on('error', () => {
-        spawn('cmd.exe', ['/c', 'start', '', '/D', cwd, 'claude', ...args], {
-          detached: true,
-          stdio: 'ignore',
-          shell: true,
-          env: cleanEnv
-        }).unref()
-      })
-      wtProcess.unref()
-    } else {
-      // Linux: try common terminal emulators
-      const terminals = ['x-terminal-emulator', 'gnome-terminal', 'konsole', 'xterm']
-      const tryTerminal = (idx: number): void => {
-        if (idx >= terminals.length) return
-        const term = terminals[idx]
-        const p = spawn(term, ['-e', 'claude', ...args], {
-          detached: true,
-          stdio: 'ignore',
-          cwd,
-          env: cleanEnv
-        })
-        p.on('error', () => tryTerminal(idx + 1))
-        p.unref()
-      }
-      tryTerminal(0)
-    }
+    platform.openTerminal(conv.cwd, args, cleanEnv)
   })
 
   ipcMain.handle('session:openVSCode', (_e, convId: string) => {

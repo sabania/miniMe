@@ -1,11 +1,12 @@
 import { Tray, Menu, BrowserWindow, app, shell, nativeImage } from 'electron'
-import { spawn, execFile } from 'child_process'
+import { execFile } from 'child_process'
 import { randomUUID } from 'crypto'
 import { getState, abort } from './bridge'
 import { getTypedConfig, setTypedConfig } from './config'
 import { getCachedModels } from './agent'
 import { getActiveConversation, createConversation } from './db'
 import { sendToRenderer } from './ipc-util'
+import { platform } from './platform'
 
 let tray: Tray | null = null
 
@@ -170,35 +171,5 @@ function openTerminal(): void {
   const cwd = getTypedConfig('currentCwd')
   const cleanEnv = { ...process.env }
   delete cleanEnv.CLAUDECODE
-
-  if (process.platform === 'win32') {
-    const wtProcess = spawn('wt', ['-d', cwd, '--', 'claude'], {
-      detached: true,
-      stdio: 'ignore',
-      env: cleanEnv
-    })
-    wtProcess.on('error', () => {
-      spawn('cmd.exe', ['/c', 'start', '', '/D', cwd, 'claude'], {
-        detached: true,
-        stdio: 'ignore',
-        shell: true,
-        env: cleanEnv
-      }).unref()
-    })
-    wtProcess.unref()
-  } else {
-    const terminals = ['x-terminal-emulator', 'gnome-terminal', 'konsole', 'xterm']
-    const tryTerminal = (idx: number): void => {
-      if (idx >= terminals.length) return
-      const p = spawn(terminals[idx], ['-e', 'claude'], {
-        detached: true,
-        stdio: 'ignore',
-        cwd,
-        env: cleanEnv
-      })
-      p.on('error', () => tryTerminal(idx + 1))
-      p.unref()
-    }
-    tryTerminal(0)
-  }
+  platform.openTerminal(cwd, [], cleanEnv)
 }

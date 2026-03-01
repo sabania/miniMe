@@ -11,9 +11,11 @@
     "typecheck:web": "tsc --noEmit -p tsconfig.web.json --composite false",
     "typecheck": "npm run typecheck:node && npm run typecheck:web",
     "postinstall": "electron-builder install-app-deps",
+    "build:mac": "npm run build && CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --mac && bash scripts/codesign-mac.sh dist/mac-arm64/miniMe.app && bash scripts/codesign-mac.sh dist/mac/miniMe.app",
     "build:win": "npm run build && electron-builder --win",
     "build:linux": "npm run build && electron-builder --linux",
-    "build:all": "npm run build && electron-builder --win --linux",
+    "build:all": "npm run build && electron-builder --win --linux --mac",
+    "build:publish:mac": "npm run build && electron-builder --mac --publish always",
     "build:publish:win": "npm run build && electron-builder --win --publish always",
     "build:publish:linux": "npm run build && electron-builder --linux --publish always",
     "test": "vitest run"
