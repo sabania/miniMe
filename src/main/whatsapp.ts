@@ -139,7 +139,7 @@ export async function connect(): Promise<void> {
     auth: state,
     version,
     logger: pino({ level: 'silent' }) as never,
-    browser: Browsers.windows('Desktop'),
+    browser: Browsers.appropriate('Desktop'),
     syncFullHistory: false,
     markOnlineOnConnect: false,
     getMessage: async () => undefined

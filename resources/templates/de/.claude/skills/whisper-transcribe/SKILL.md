@@ -8,11 +8,11 @@ Transkribiere Audio-Dateien mit whisper.cpp (lokal, kein API-Call noetig).
 
 ## Setup
 
-- **Binary**: `tools/whisper/Release/whisper-cli.exe`
+- **Binary**: `tools/whisper/Release/whisper-cli` (macOS/Linux) oder `whisper-cli.exe` (Windows)
 - **Modell**: `tools/whisper/models/ggml-base.bin` (148MB, base)
 - **Unterstuetzte Formate**: OGG, WAV, MP3, FLAC
 - **Sprachen**: 99 Sprachen inkl. Deutsch, Englisch
-- **ffmpeg**: Muss installiert sein (`winget install Gyan.FFmpeg`)
+- **ffmpeg**: Muss installiert sein — `brew install ffmpeg` (macOS) oder `winget install Gyan.FFmpeg` (Windows)
 
 Alle Pfade relativ zum Workspace-Root.
 
@@ -39,13 +39,13 @@ Das Script macht automatisch:
 
 ```bash
 # Basis-Transkription (Deutsch)
-tools/whisper/Release/whisper-cli.exe \
+tools/whisper/Release/whisper-cli \
   -m tools/whisper/models/ggml-base.bin \
   -l de \
   -f <audio-datei>
 
 # Mit Textausgabe in Datei
-tools/whisper/Release/whisper-cli.exe \
+tools/whisper/Release/whisper-cli \
   -m tools/whisper/models/ggml-base.bin \
   -l de -otxt \
   -f <audio-datei>
@@ -87,7 +87,7 @@ Falls das Script nicht geht, Schritte einzeln:
    ```
 3. Transkribieren:
    ```bash
-   tools/whisper/Release/whisper-cli.exe \
+   tools/whisper/Release/whisper-cli \
      -m tools/whisper/models/ggml-base.bin \
      -l de --no-timestamps \
      -f tmp/media/<datei>.wav

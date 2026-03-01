@@ -68,11 +68,14 @@ const darwinPlatform: Platform = {
     // Single-quote the shell arguments to prevent $() and backtick expansion
     const sq = (s: string): string => "'" + s.replace(/'/g, "'\\''") + "'"
     const claudeCmd = ['claude', ...args].map(sq).join(' ')
+    const shellCmd = `cd ${sq(cwd)} && ${claudeCmd}`
+    // Escape for AppleScript double-quoted string
+    const asEscaped = shellCmd.replace(/\\/g, '\\\\').replace(/"/g, '\\"')
 
     const script = [
       'tell application "Terminal"',
       '  activate',
-      `  do script "cd ${sq(cwd)} && ${claudeCmd}"`,
+      `  do script "${asEscaped}"`,
       'end tell'
     ].join('\n')
 

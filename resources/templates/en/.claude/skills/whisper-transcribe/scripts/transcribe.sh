@@ -11,6 +11,7 @@ WORKSPACE="$(cd "$SCRIPT_DIR/../../../.." && pwd)"
 FFMPEG="$(command -v ffmpeg 2>/dev/null)" || FFMPEG=""
 if [ -z "$FFMPEG" ]; then
     for candidate in \
+        "/opt/homebrew/bin/ffmpeg" \
         "$WORKSPACE/tools/ffmpeg.exe" \
         "C:/Users/$USER/AppData/Local/Microsoft/WinGet/Links/ffmpeg.exe" \
         "/usr/local/bin/ffmpeg" \
@@ -19,16 +20,23 @@ if [ -z "$FFMPEG" ]; then
     done
 fi
 if [ -z "$FFMPEG" ]; then
-    echo "Error: ffmpeg not found. Install: winget install Gyan.FFmpeg"
+    echo "Error: ffmpeg not found. Install: brew install ffmpeg (macOS) or winget install Gyan.FFmpeg (Windows)"
     exit 1
 fi
 
 # Whisper binary + model in workspace/tools/whisper/
-WHISPER="$WORKSPACE/tools/whisper/Release/whisper-cli.exe"
+# macOS: whisper-cli or Release/bin/whisper-cli, Windows: whisper-cli.exe
+WHISPER=""
+for candidate in \
+    "$WORKSPACE/tools/whisper/Release/bin/whisper-cli" \
+    "$WORKSPACE/tools/whisper/Release/whisper-cli.exe" \
+    "$WORKSPACE/tools/whisper/Release/whisper-cli"; do
+    if [ -f "$candidate" ]; then WHISPER="$candidate"; break; fi
+done
 MODEL="$WORKSPACE/tools/whisper/models/ggml-base.bin"
 
-if [ ! -f "$WHISPER" ]; then
-    echo "Error: whisper-cli.exe not found: $WHISPER"
+if [ -z "$WHISPER" ] || [ ! -f "$WHISPER" ]; then
+    echo "Error: whisper-cli not found in $WORKSPACE/tools/whisper/"
     exit 1
 fi
 if [ ! -f "$MODEL" ]; then
@@ -57,7 +65,8 @@ WAV_FILE="${BASENAME}_tmp.wav"
 NEEDS_CLEANUP=0
 
 # Convert if not WAV
-if [ "${EXT,,}" != "wav" ]; then
+EXT_LOWER="$(echo "$EXT" | tr '[:upper:]' '[:lower:]')"
+if [ "$EXT_LOWER" != "wav" ]; then
     echo "[1/3] Converting .$EXT → WAV ..."
     "$FFMPEG" -y -i "$INPUT" -ar 16000 -ac 1 "$WAV_FILE" -loglevel error 2>&1
     if [ $? -ne 0 ]; then
