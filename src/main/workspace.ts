@@ -401,18 +401,24 @@ export function getMediaDir(): string {
 
 // ─── Default Permissions ──────────────────────────────────────
 
+// Only tools that the SDK's permission mode can't handle natively.
+// Standard tools (Read, Write, Edit, Glob, Grep, Bash) are managed by
+// the SDK's permission mode (e.g. acceptEdits) + settings.json deny/allow.
 const DEFAULT_ALLOW_TOOLS = [
+  // MCP tools — not known to permission modes, must be explicitly allowed
   'mcp__send-message__sendMessage',
   'mcp__scheduler__list_tasks',
   'mcp__scheduler__add_task',
   'mcp__scheduler__update_task',
   'mcp__scheduler__remove_task',
-  'Read', 'Glob', 'Grep', 'Edit', 'Write', 'Bash'
+  // Whisper transcription — must always work for incoming voice messages
+  'Bash(bash *transcribe.sh*)'
 ]
 
 /**
  * Ensure default tool permissions exist at {cwd}/.claude/settings.json.
- * Merges with existing settings — never overwrites user content.
+ * Only seeds the default allow list if NO permissions section exists yet.
+ * Never force-adds tools — user's deny/allow customizations are preserved.
  * Called before every SDK query to handle CWD changes (e.g. /project).
  */
 export function ensurePermissionsAtCwd(cwd: string): void {
@@ -426,18 +432,12 @@ export function ensurePermissionsAtCwd(cwd: string): void {
     } catch { settings = {} }
   }
 
-  const permissions = (settings.permissions ?? {}) as Record<string, string[]>
-  const allow = permissions.allow ?? []
-  let changed = false
-  for (const tool of DEFAULT_ALLOW_TOOLS) {
-    if (!allow.includes(tool)) {
-      allow.push(tool)
-      changed = true
-    }
-  }
+  const permissions = (settings.permissions ?? {}) as Record<string, unknown>
 
-  if (changed) {
-    permissions.allow = allow
+  // Only seed defaults if no allow list exists at all.
+  // Once the user (or initial scaffold) has set permissions, we don't touch them.
+  if (!permissions.allow) {
+    permissions.allow = [...DEFAULT_ALLOW_TOOLS]
     settings.permissions = permissions
     writeFileSync(settingsPath, JSON.stringify(settings, null, 2), 'utf-8')
   }
@@ -483,13 +483,12 @@ function mergeHooksConfig(ws: string): void {
 
   settings.hooks = hooks
 
-  // Ensure default permissions
-  const permissions = (settings.permissions ?? {}) as Record<string, string[]>
-  const allow = permissions.allow ?? []
-  for (const tool of DEFAULT_ALLOW_TOOLS) {
-    if (!allow.includes(tool)) allow.push(tool)
+  // Seed default permissions only if no allow list exists yet.
+  // Once set, user customizations (deny/allow) are preserved.
+  const permissions = (settings.permissions ?? {}) as Record<string, unknown>
+  if (!permissions.allow) {
+    permissions.allow = [...DEFAULT_ALLOW_TOOLS]
   }
-  permissions.allow = allow
   settings.permissions = permissions
 
   // Enable auto memory by default

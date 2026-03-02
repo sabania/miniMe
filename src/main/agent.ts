@@ -1,6 +1,6 @@
 import { join } from 'path'
 import { execSync } from 'child_process'
-import { existsSync, readFileSync } from 'fs'
+import { existsSync } from 'fs'
 import { ensurePermissionsAtCwd } from './workspace'
 import { createSchedulerMcpServer } from './mcp-scheduler'
 import { platform } from './platform'
@@ -76,29 +76,6 @@ async function createSendMessageMcpServer(): Promise<any> {
       )
     ]
   })
-}
-
-// ─── Load Allowed Tools from settings.json ───────────────────
-// NOTE: The SDK does NOT check settings.json when canUseTool is provided.
-// canUseTool overrides ALL permission evaluation, so we must check manually.
-
-function loadAllowedTools(cwd: string): Set<string> {
-  const paths = [
-    join(cwd, '.claude', 'settings.json'),
-    join(cwd, '.claude', 'settings.local.json')
-  ]
-  const tools = new Set<string>()
-  for (const p of paths) {
-    try {
-      if (!existsSync(p)) continue
-      const data = JSON.parse(readFileSync(p, 'utf-8'))
-      const allow = data?.permissions?.allow
-      if (Array.isArray(allow)) {
-        for (const t of allow) if (typeof t === 'string') tools.add(t)
-      }
-    } catch { /* ignore parse errors */ }
-  }
-  return tools
 }
 
 // ─── Claude Executable Path ─────────────────────────────────
@@ -252,19 +229,15 @@ export async function runQuery(options: AgentRunOptions): Promise<AgentRunResult
   if (permissionMode === 'bypassPermissions') {
     sdkOptions.allowDangerouslySkipPermissions = true
   } else {
-    // NOTE: canUseTool overrides ALL SDK permission evaluation.
-    // We must check settings.json allowlist manually here.
-    const allowSet = loadAllowedTools(cwd)
+    // canUseTool is the LAST step in the SDK's permission evaluation:
+    // Hooks → settings.json (deny → allow → ask) → Permission Mode → canUseTool
+    // The SDK natively reads settings.json deny/allow rules BEFORE reaching here.
+    // We only need canUseTool as a fallback to forward unresolved permission
+    // requests to the user via WhatsApp.
     sdkOptions.canUseTool = async (
       toolName: string,
       toolInput: Record<string, unknown>
     ): Promise<PermissionDecision> => {
-      if (allowSet.has(toolName)) return { behavior: 'allow' }
-      for (const pattern of allowSet) {
-        if (pattern.endsWith('*') && toolName.startsWith(pattern.slice(0, -1))) {
-          return { behavior: 'allow' }
-        }
-      }
       return onPermissionRequest({ toolName, toolInput })
     }
   }
