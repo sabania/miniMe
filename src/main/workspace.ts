@@ -462,26 +462,32 @@ function mergeHooksConfig(ws: string): void {
   }
 
   const hooks = (settings.hooks ?? {}) as Record<string, unknown[]>
+  const managed = (settings._managedHooks ?? []) as string[]
 
-  hooks.PreCompact = [
-    {
-      hooks: [
-        {
-          type: 'command',
-          command:
-            'echo LEARNING TRIGGER — Context wird komprimiert! ' +
-            'Jetzt alles Wichtige aus dieser Session sichern bevor es verloren geht: ' +
-            '1. Erkenntnisse, Entscheidungen, Patterns, Anti-Patterns → memory/ schreiben ' +
-            '2. User-Praeferenzen oder neue Fakten → memory/user/ updaten ' +
-            '3. Offene Punkte, laufende Arbeit → Status in memory/ dokumentieren ' +
-            '4. Alle betroffenen CLAUDE.md Indexe aktualisieren ' +
-            '5. git add memory/ SOUL.md CLAUDE.md .claude/skills/ && git commit -m Was gelernt: ...'
-        }
-      ]
-    }
-  ]
+  // Only seed PreCompact once. After that, user owns it — removing or editing is respected.
+  if (!managed.includes('PreCompact')) {
+    hooks.PreCompact = [
+      {
+        hooks: [
+          {
+            type: 'command',
+            command:
+              'echo LEARNING TRIGGER — Context wird komprimiert! ' +
+              'Jetzt alles Wichtige aus dieser Session sichern bevor es verloren geht: ' +
+              '1. Erkenntnisse, Entscheidungen, Patterns, Anti-Patterns → memory/ schreiben ' +
+              '2. User-Praeferenzen oder neue Fakten → memory/user/ updaten ' +
+              '3. Offene Punkte, laufende Arbeit → Status in memory/ dokumentieren ' +
+              '4. Alle betroffenen CLAUDE.md Indexe aktualisieren ' +
+              '5. git add memory/ SOUL.md CLAUDE.md .claude/skills/ && git commit -m Was gelernt: ...'
+          }
+        ]
+      }
+    ]
+    managed.push('PreCompact')
+  }
 
   settings.hooks = hooks
+  settings._managedHooks = managed
 
   // Seed default permissions only if no allow list exists yet.
   // Once set, user customizations (deny/allow) are preserved.

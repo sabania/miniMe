@@ -17,4 +17,7 @@
     Goto loop
   done:
     FindClose $0
+
+  ; Remove electron-updater cache
+  RMDir /r "$LOCALAPPDATA\${APP_FILENAME}-updater"
 !macroend
