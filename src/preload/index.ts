@@ -50,6 +50,7 @@ const api: IpcApi = {
 
   // Models
   getModels: () => ipcRenderer.invoke('models:list'),
+  refreshModels: () => ipcRenderer.invoke('models:refresh'),
 
   // Scheduler Status
   getSchedulerStatus: () => ipcRenderer.invoke('scheduler:status'),

@@ -95,7 +95,7 @@ function SessionItem({
         </button>
       </div>
 
-      {/* Bottom row: message count + cost */}
+      {/* Bottom row: message count + cost + provider/model */}
       <div className="flex items-center gap-2 mt-1.5 pl-[18px]">
         <span className="text-[10px] text-zinc-500">{conv.messageCount} msg</span>
         {costStr && (
@@ -103,6 +103,13 @@ function SessionItem({
             {costStr}
           </span>
         )}
+        <span className={`text-[10px] ml-auto truncate max-w-[120px] ${
+          conv.provider === 'ollama' ? 'text-purple-400/50' : 'text-blue-400/50'
+        }`} title={`${conv.provider ?? 'anthropic'} · ${conv.model ?? 'default'}`}>
+          {conv.provider === 'ollama'
+            ? (conv.model ?? 'ollama')
+            : (conv.model && conv.model !== 'default' ? conv.model : 'claude')}
+        </span>
       </div>
 
       {/* Delete confirmation */}
