@@ -64,6 +64,7 @@ deb:
     - libuuid1
     - libappindicator3-1
 npmRebuild: true
+afterPack: "./scripts/afterPack.js"
 publish:
   provider: github
   owner: sabania
