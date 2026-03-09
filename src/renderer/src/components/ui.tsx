@@ -10,7 +10,7 @@ export function Row({ label, children }: { label: string; children: React.ReactN
 }
 
 export function PillGroup({ children }: { children: React.ReactNode }): React.JSX.Element {
-  return <div className="flex gap-1">{children}</div>
+  return <div className="flex flex-wrap gap-1">{children}</div>
 }
 
 export function Pill({ active, onClick, title, children }: { active: boolean; onClick: () => void; title?: string; children: React.ReactNode }): React.JSX.Element {

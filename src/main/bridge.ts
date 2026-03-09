@@ -1,6 +1,6 @@
 import { randomUUID } from 'crypto'
 import { Notification, BrowserWindow } from 'electron'
-import { sendMessage, isConnected } from './whatsapp'
+import { sendMessage, isConnected, sendPresenceUpdate } from './whatsapp'
 import { getTypedConfig } from './config'
 import * as db from './db'
 import { runQuery, setMcpMessageHandler, type PermissionRequestInfo, type PermissionDecision } from './agent'
@@ -362,6 +362,8 @@ export async function handleScheduledPrompt(prompt: string, label: string): Prom
   emitAgentState()
 
   const timeout = setTimeout(() => abortController?.abort(), 120_000)
+  let typingInterval: ReturnType<typeof setInterval> | null = null
+
   let convId: string | null = null
 
   try {
@@ -376,7 +378,7 @@ export async function handleScheduledPrompt(prompt: string, label: string): Prom
       const newId = randomUUID()
       const cwd = getTypedConfig('currentCwd')
       const mode = getTypedConfig('permissionMode')
-      db.createConversation(newId, cwd, mode)
+      db.createConversation(newId, cwd, mode, getTypedConfig('provider'), getTypedConfig('model'))
       conversation = db.getActiveConversation()
       if (!conversation) throw new Error('Failed to create conversation')
     }
@@ -384,6 +386,8 @@ export async function handleScheduledPrompt(prompt: string, label: string): Prom
     convId = conversation.id
     activeConversationId = convId
     activeJid = owner.jid
+    sendPresenceUpdate('composing', owner.jid)
+    typingInterval = setInterval(() => sendPresenceUpdate('composing', owner.jid), 15_000)
 
     let mcpMessageSent = false
     setMcpMessageHandler((mcpContent: string, filePath?: string) => {
@@ -406,8 +410,9 @@ export async function handleScheduledPrompt(prompt: string, label: string): Prom
     })
 
     db.updateConversation(convId, {
-      sdkSessionId: result.sdkSessionId,
-      totalCostUsd: (conversation.totalCostUsd ?? 0) + result.costUsd
+      sdkSessionId: result.sdkSessionId || conversation.sdkSessionId,
+      totalCostUsd: (conversation.totalCostUsd ?? 0) + result.costUsd,
+      model: getTypedConfig('model')
     })
 
     // Suppress "OK" responses (heartbeat or task with nothing to report)
@@ -433,6 +438,8 @@ export async function handleScheduledPrompt(prompt: string, label: string): Prom
     }
   } finally {
     clearTimeout(timeout)
+    if (typingInterval) clearInterval(typingInterval)
+    if (activeJid) sendPresenceUpdate('paused', activeJid)
     status = 'idle'
     activeConversationId = null
     activeJid = null
@@ -463,6 +470,8 @@ export async function handleMessage(jid: string, content: string, pushName?: str
   abortController = new AbortController()
   activeJid = jid
   emitAgentState()
+  sendPresenceUpdate('composing', jid)
+  const typingInterval = setInterval(() => sendPresenceUpdate('composing', jid), 15_000)
 
   let convId: string | null = null
 
@@ -473,7 +482,7 @@ export async function handleMessage(jid: string, content: string, pushName?: str
       const newId = randomUUID()
       const cwd = getTypedConfig('currentCwd')
       const mode = getTypedConfig('permissionMode')
-      db.createConversation(newId, cwd, mode)
+      db.createConversation(newId, cwd, mode, getTypedConfig('provider'), getTypedConfig('model'))
       conversation = db.getActiveConversation()
       if (!conversation) throw new Error('Failed to create conversation')
     }
@@ -514,33 +523,37 @@ export async function handleMessage(jid: string, content: string, pushName?: str
       abortController
     })
 
-    // Update conversation
+    // Update conversation — keep existing session ID if result has none (e.g. early abort)
     db.updateConversation(convId, {
-      sdkSessionId: result.sdkSessionId,
-      totalCostUsd: (conversation.totalCostUsd ?? 0) + result.costUsd
+      sdkSessionId: result.sdkSessionId || conversation.sdkSessionId,
+      totalCostUsd: (conversation.totalCostUsd ?? 0) + result.costUsd,
+      model: getTypedConfig('model')
     })
 
-    // In sendMessage mode, send final result only if substantial AND MCP didn't already send
-    if (!streamToWhatsApp && !mcpMessageSent && result.content && result.content.length > 10) {
-      await safeSend(jid, result.content)
-      addMessageAndEmit(convId, 'outbound', result.content)
-    }
-
-    // Log cost
-    const costStr = result.costUsd > 0 ? ` | $${result.costUsd.toFixed(4)}` : ''
-    const durationStr = result.durationMs > 0 ? ` | ${Math.round(result.durationMs / 1000)}s` : ''
-    addMessageAndEmit(convId, 'system', `Done${costStr}${durationStr}`)
-  } catch (err: unknown) {
-    const error = err as Error
-    if (error.name === 'AbortError') {
+    // Abort: runQuery returns partial result instead of throwing
+    if (abortController?.signal.aborted) {
       await safeSend(jid, 'Query abgebrochen.')
       if (convId) addMessageAndEmit(convId, 'system', 'Aborted')
     } else {
-      console.error('[bridge] Query error:', error)
-      await safeSend(jid, 'Ein Fehler ist aufgetreten. Details im Log.')
-      if (convId) addMessageAndEmit(convId, 'system', `Error: ${error.message}`)
+      // In sendMessage mode, send final result only if substantial AND MCP didn't already send
+      if (!streamToWhatsApp && !mcpMessageSent && result.content && result.content.length > 10) {
+        await safeSend(jid, result.content)
+        addMessageAndEmit(convId, 'outbound', result.content)
+      }
+
+      // Log cost
+      const costStr = result.costUsd > 0 ? ` | $${result.costUsd.toFixed(4)}` : ''
+      const durationStr = result.durationMs > 0 ? ` | ${Math.round(result.durationMs / 1000)}s` : ''
+      addMessageAndEmit(convId, 'system', `Done${costStr}${durationStr}`)
     }
+  } catch (err: unknown) {
+    const error = err as Error
+    console.error('[bridge] Query error:', error)
+    await safeSend(jid, 'Ein Fehler ist aufgetreten. Details im Log.')
+    if (convId) addMessageAndEmit(convId, 'system', `Error: ${error.message}`)
   } finally {
+    clearInterval(typingInterval)
+    if (activeJid) sendPresenceUpdate('paused', activeJid)
     status = 'idle'
     activeConversationId = null
     activeJid = null

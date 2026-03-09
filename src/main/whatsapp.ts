@@ -385,6 +385,16 @@ export function isConnected(): boolean {
   return status === 'connected'
 }
 
+export async function sendPresenceUpdate(type: 'composing' | 'paused' | 'available', toJid: string): Promise<void> {
+  if (!sock || status !== 'connected') return
+  try {
+    const fullJid = toJid.includes('@') ? toJid : `${toJid}@s.whatsapp.net`
+    await sock.sendPresenceUpdate(type, fullJid)
+  } catch {
+    /* presence is best-effort */
+  }
+}
+
 export function hasCredentials(): boolean {
   const authDir = join(app.getPath('userData'), 'whatsapp-auth')
   return existsSync(join(authDir, 'creds.json'))

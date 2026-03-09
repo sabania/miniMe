@@ -17,6 +17,8 @@ export interface ConfigMap {
   startWithSystem: boolean
   useGit: boolean
   language: 'de' | 'en'
+  provider: 'anthropic' | 'ollama'
+  ollamaUrl: string
 }
 
 export type ConfigKey = keyof ConfigMap
@@ -26,6 +28,8 @@ export type ConfigKey = keyof ConfigMap
 export interface Conversation {
   id: string
   sdkSessionId: string | null
+  provider: string | null
+  model: string | null
   cwd: string
   permissionMode: string
   status: 'active' | 'closed'
@@ -204,6 +208,7 @@ export interface IpcApi {
 
   // Models
   getModels(): Promise<{ value: string; label: string; description: string }[]>
+  refreshModels(): Promise<{ value: string; label: string; description: string }[]>
 
   // Scheduler Status
   getSchedulerStatus(): Promise<SchedulerStatus>

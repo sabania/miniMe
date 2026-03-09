@@ -20,7 +20,9 @@ const DEFAULTS: ConfigMap = {
   minimizeToTray: true,
   startWithSystem: false,
   useGit: true,
-  language: 'de'
+  language: 'de',
+  provider: 'anthropic',
+  ollamaUrl: 'http://localhost:11434'
 }
 
 function getDefaultWorkspacePath(): string {

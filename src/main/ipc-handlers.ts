@@ -8,10 +8,11 @@ import * as bridge from './bridge'
 import * as workspace from './workspace'
 import { isGitAvailable, initGitRepo, initAllProjectGits, workspaceNeedsSetup, forceScaffoldWorkspace } from './workspace'
 import { syncScheduledTasks, getSchedulerStatus, stopScheduler, startScheduler } from './scheduler'
-import { getCachedModels, fetchModels } from './agent'
+import { getCachedModels, fetchModels, clearModelCache } from './agent'
 import { listDiskSessions, decodeProjectSlug } from './disk-sessions'
 import { getUpdateStatus, checkForUpdates, downloadUpdate, installUpdate } from './updater'
 import { platform } from './platform'
+import { sendToRenderer } from './ipc-util'
 import type { ConfigKey, PermissionResponse, ScheduledTask } from '../shared/types'
 
 export function registerIpcHandlers(): void {
@@ -41,6 +42,26 @@ export function registerIpcHandlers(): void {
     if (key === 'useGit' && (value === true || value === 'true')) {
       initGitRepo(getTypedConfig('workspacePath'))
       initAllProjectGits()
+    }
+    if (key === 'provider') {
+      const newProvider = value as string
+      const active = db.getActiveConversation()
+      if (active) {
+        db.closeConversation(active.id)
+        bridge.abort()
+      }
+      // Find most recent closed conversation for the new provider, or create new
+      const existing = db.findRecentProviderConversation(newProvider)
+      if (existing) {
+        db.resumeConversation(existing.id)
+        console.log(`[ipc] Provider → ${newProvider} — resumed conversation ${existing.id}`)
+      } else {
+        const convId = randomUUID()
+        const cwd = getTypedConfig('currentCwd')
+        const mode = getTypedConfig('permissionMode')
+        db.createConversation(convId, cwd, mode, newProvider, getTypedConfig('model'))
+        console.log(`[ipc] Provider → ${newProvider} — new conversation ${convId}`)
+      }
     }
     if (key === 'startWithSystem') {
       app.setLoginItemSettings({
@@ -73,7 +94,7 @@ export function registerIpcHandlers(): void {
     const convId = randomUUID()
     const cwd = getTypedConfig('currentCwd')
     const mode = getTypedConfig('permissionMode')
-    db.createConversation(convId, cwd, mode)
+    db.createConversation(convId, cwd, mode, getTypedConfig('provider'), getTypedConfig('model'))
     return convId
   })
 
@@ -87,6 +108,15 @@ export function registerIpcHandlers(): void {
 
   ipcMain.handle('conversations:resume', (_e, convId: string) => {
     bridge.abort()
+    const conv = db.getConversations().find((c) => c.id === convId)
+    if (conv?.provider) {
+      setTypedConfig('provider', conv.provider as import('../shared/types').ConfigMap['provider'])
+      sendToRenderer('config:changed', 'provider', conv.provider)
+      if (conv.model) {
+        setTypedConfig('model', conv.model)
+        sendToRenderer('config:changed', 'model', conv.model)
+      }
+    }
     db.resumeConversation(convId)
   })
 
@@ -127,7 +157,7 @@ export function registerIpcHandlers(): void {
     const cwd = cwdOverride || decodeProjectSlug(projectSlug)
     const convId = randomUUID()
     const mode = getTypedConfig('permissionMode')
-    db.createConversation(convId, cwd, mode)
+    db.createConversation(convId, cwd, mode, getTypedConfig('provider'), getTypedConfig('model'))
     db.updateConversation(convId, { sdkSessionId: sessionId })
     db.resumeConversation(convId)
     return convId
@@ -263,6 +293,11 @@ export function registerIpcHandlers(): void {
   // ─── Models ───────────────────────────────────────────────
   ipcMain.handle('models:list', async () => {
     return getCachedModels() ?? await fetchModels()
+  })
+
+  ipcMain.handle('models:refresh', async () => {
+    clearModelCache()
+    return fetchModels()
   })
 
   // ─── Updater ────────────────────────────────────────────

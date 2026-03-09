@@ -4,7 +4,9 @@ import { existsSync, statSync } from 'fs'
 import * as whatsapp from './whatsapp'
 import * as db from './db'
 import * as bridge from './bridge'
-import { getCachedModels } from './agent'
+import { getCachedModels, clearModelCache, fetchModels } from './agent'
+import { sendToRenderer } from './ipc-util'
+import { randomUUID } from 'crypto'
 import type { ConfigMap } from '../shared/types'
 
 export interface CommandResult {
@@ -55,6 +57,8 @@ export function parseCommand(content: string, jid: string): CommandResult {
   // ─── Status ───────────────────────────────────────────
   if (cmd === '/status') {
     const mode = getTypedConfig('permissionMode')
+    const provider = getTypedConfig('provider')
+    const model = getTypedConfig('model')
     const cwd = getTypedConfig('currentCwd')
     const project = getTypedConfig('currentProject')
     const active = db.getActiveConversation()
@@ -62,6 +66,7 @@ export function parseCommand(content: string, jid: string): CommandResult {
 
     const lines = [
       `WhatsApp: ${waState.status}${waState.jid ? ` (${waState.jid})` : ''}`,
+      `Provider: ${provider} | Model: ${model}`,
       `Modus: ${mode}`,
       `CWD: ${cwd}`,
       project ? `Projekt: ${project}` : null,
@@ -87,6 +92,53 @@ export function parseCommand(content: string, jid: string): CommandResult {
     setTypedConfig('currentCwd', project.junctionPath)
     setTypedConfig('currentProject', project.name)
     return { handled: true, reply: `CWD: ${project.junctionPath}` }
+  }
+
+  // ─── Provider Command (owner only for changes) ──────────
+  if (cmd === '/provider') {
+    const PROVIDERS: { value: ConfigMap['provider']; label: string }[] = [
+      { value: 'anthropic', label: 'Anthropic' },
+      { value: 'ollama', label: 'Ollama' }
+    ]
+    const current = getTypedConfig('provider')
+    if (!arg) {
+      const list = PROVIDERS.map((p) =>
+        `${p.value === current ? '→ ' : '  '}${p.label} (${p.value})`
+      ).join('\n')
+      return { handled: true, reply: `Provider: ${current}\n\n${list}\n\n/provider <name> zum Wechseln` }
+    }
+    if (!isOwnerJid(jid)) return { handled: true, reply: 'Nur der Owner kann den Provider aendern.' }
+    const q = arg.toLowerCase()
+    const match = PROVIDERS.find((p) =>
+      p.value.toLowerCase().includes(q) || p.label.toLowerCase().includes(q)
+    )
+    if (!match) {
+      return { handled: true, reply: `Unbekannter Provider "${arg}". /provider für Liste.` }
+    }
+    if (match.value === current) {
+      return { handled: true, reply: `Provider ist bereits ${match.label}.` }
+    }
+    // Switch provider — same logic as ipc-handlers config:set provider
+    const active = db.getActiveConversation()
+    if (active) {
+      db.closeConversation(active.id)
+      bridge.abort()
+    }
+    setTypedConfig('provider', match.value)
+    sendToRenderer('config:changed', 'provider', match.value)
+    const existing = db.findRecentProviderConversation(match.value)
+    if (existing) {
+      db.resumeConversation(existing.id)
+    } else {
+      const convId = randomUUID()
+      const cwd = getTypedConfig('currentCwd')
+      const mode = getTypedConfig('permissionMode')
+      db.createConversation(convId, cwd, mode, match.value, getTypedConfig('model'))
+    }
+    // Refresh model cache in background
+    clearModelCache()
+    fetchModels().catch(() => {})
+    return { handled: true, reply: `Provider: ${match.label}` }
   }
 
   // ─── Model Command (owner only for changes) ────────────
@@ -152,6 +204,7 @@ export function parseCommand(content: string, jid: string): CommandResult {
         '/new — Neue Conversation',
         '/stop — Query abbrechen',
         '/status — Aktueller Status',
+        '/provider [name] — Provider anzeigen/wechseln',
         '/model [name] — Modell anzeigen/wechseln',
         '/bypass /accept /ask /plan — Permission Mode',
         '/project <name> — Projekt wechseln',

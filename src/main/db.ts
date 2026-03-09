@@ -105,7 +105,7 @@ function migrateAllowedNumbersToContacts(database: Database.Database): void {
   }
 }
 
-const ALLOWED_UPDATE_COLUMNS = new Set(['sdkSessionId', 'totalCostUsd', 'status', 'closedAt'])
+const ALLOWED_UPDATE_COLUMNS = new Set(['sdkSessionId', 'totalCostUsd', 'status', 'closedAt', 'provider', 'model'])
 
 let db: Database.Database | null = null
 
@@ -178,6 +178,25 @@ export function initDb(): Database.Database {
     console.log('[db] Migrated to V6 — model alias')
   }
 
+  if (currentVersion < 7) {
+    db.transaction(() => {
+      const cols = db.prepare("PRAGMA table_info('conversations')").all() as { name: string }[]
+      if (!cols.some((c) => c.name === 'provider')) {
+        db.exec("ALTER TABLE conversations ADD COLUMN provider TEXT DEFAULT 'anthropic';")
+      }
+      if (!cols.some((c) => c.name === 'model')) {
+        db.exec("ALTER TABLE conversations ADD COLUMN model TEXT DEFAULT 'default';")
+      }
+      // Tag active conversation(s) with current config provider/model
+      db.exec(`UPDATE conversations
+        SET provider = COALESCE((SELECT value FROM config WHERE key = 'provider'), 'anthropic'),
+            model = COALESCE((SELECT value FROM config WHERE key = 'model'), 'default')
+        WHERE status = 'active';`)
+      db.exec('DELETE FROM schema_version; INSERT INTO schema_version (version) VALUES (7);')
+    })()
+    console.log('[db] Migrated to V7 — provider and model columns added to conversations')
+  }
+
   return db
 }
 
@@ -216,10 +235,16 @@ export function getAllConfig(): Record<string, string> {
 
 // ─── Conversation CRUD ─────────────────────────────────────
 
-export function createConversation(id: string, cwd: string, permissionMode: string): void {
+export function createConversation(id: string, cwd: string, permissionMode: string, provider?: string, model?: string): void {
   getDb()
-    .prepare("INSERT INTO conversations (id, cwd, permissionMode, createdAt) VALUES (?, ?, ?, datetime('now', 'localtime'))")
-    .run(id, cwd, permissionMode)
+    .prepare("INSERT INTO conversations (id, cwd, permissionMode, provider, model, createdAt) VALUES (?, ?, ?, ?, ?, datetime('now', 'localtime'))")
+    .run(id, cwd, permissionMode, provider ?? 'anthropic', model ?? 'default')
+}
+
+export function findRecentProviderConversation(provider: string): Conversation | undefined {
+  return getDb()
+    .prepare("SELECT * FROM conversations WHERE provider = ? AND status = 'closed' ORDER BY closedAt DESC LIMIT 1")
+    .get(provider) as Conversation | undefined
 }
 
 export function getActiveConversation(): Conversation | undefined {
@@ -236,7 +261,7 @@ export function getConversations(): Conversation[] {
 
 export function updateConversation(
   id: string,
-  updates: Partial<Pick<Conversation, 'sdkSessionId' | 'totalCostUsd' | 'status' | 'closedAt'>>
+  updates: Partial<Pick<Conversation, 'sdkSessionId' | 'totalCostUsd' | 'status' | 'closedAt' | 'provider' | 'model'>>
 ): void {
   const sets: string[] = []
   const values: unknown[] = []

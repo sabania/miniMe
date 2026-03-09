@@ -5,8 +5,11 @@ import { Row, PillGroup, Pill, Toggle } from '../components/ui'
 
 export function SettingsPage(): React.JSX.Element {
   const [permissionMode, setPermissionMode] = useState<ConfigMap['permissionMode']>('default')
+  const [provider, setProvider] = useState<ConfigMap['provider']>('anthropic')
+  const [ollamaUrl, setOllamaUrl] = useState('http://localhost:11434')
   const [model, setModel] = useState('')
   const [models, setModels] = useState<ModelOption[]>([])
+  const [modelsLoading, setModelsLoading] = useState(false)
   const [streamToWhatsApp, setStreamToWhatsApp] = useState(false)
   const [waAutoConnect, setWaAutoConnect] = useState(true)
   const [minimizeToTray, setMinimizeToTray] = useState(true)
@@ -20,6 +23,8 @@ export function SettingsPage(): React.JSX.Element {
 
   useEffect(() => {
     window.api.getConfig('permissionMode').then((m) => setPermissionMode(m as ConfigMap['permissionMode']))
+    window.api.getConfig('provider').then((v) => setProvider(v as ConfigMap['provider']))
+    window.api.getConfig('ollamaUrl').then((v) => setOllamaUrl(v as string))
     window.api.getConfig('model').then((m) => setModel(m as string))
     window.api.getModels().then(setModels)
     window.api.getConfig('streamToWhatsApp').then((v) => setStreamToWhatsApp(v as boolean))
@@ -38,6 +43,11 @@ export function SettingsPage(): React.JSX.Element {
       if (key === 'minimizeToTray') setMinimizeToTray(value === 'true' || value === true)
       if (key === 'startWithSystem') setStartWithSystem(value === 'true' || value === true)
       if (key === 'useGit') setUseGit(value === 'true' || value === true)
+      if (key === 'provider') {
+        setProvider(value as ConfigMap['provider'])
+        window.api.refreshModels().then(setModels)
+      }
+      if (key === 'ollamaUrl') setOllamaUrl(value as string)
     })
     const unsubUpdate = window.api.onUpdateStatus((s) => {
       if (s.state !== 'checking') setUpdateChecking(false)
@@ -48,6 +58,38 @@ export function SettingsPage(): React.JSX.Element {
   const handlePermissionChange = async (mode: ConfigMap['permissionMode']): Promise<void> => {
     await window.api.setConfig('permissionMode', mode)
     setPermissionMode(mode)
+  }
+
+  const handleProviderChange = async (next: ConfigMap['provider']): Promise<void> => {
+    await window.api.setConfig('provider', next)
+    setProvider(next)
+    setModelsLoading(true)
+    try {
+      const newModels = await window.api.refreshModels()
+      setModels(newModels)
+      // Reset model to first available (or 'default' for Anthropic)
+      const newModel = next === 'anthropic' ? 'default' : newModels[0]?.value ?? 'default'
+      await window.api.setConfig('model', newModel)
+      setModel(newModel)
+    } finally {
+      setModelsLoading(false)
+    }
+  }
+
+  const handleOllamaUrlChange = async (url: string): Promise<void> => {
+    await window.api.setConfig('ollamaUrl', url)
+    setOllamaUrl(url)
+    setModelsLoading(true)
+    try {
+      const newModels = await window.api.refreshModels()
+      setModels(newModels)
+      if (newModels.length > 0 && newModels[0].value !== 'error') {
+        await window.api.setConfig('model', newModels[0].value)
+        setModel(newModels[0].value)
+      }
+    } finally {
+      setModelsLoading(false)
+    }
   }
 
   const handleStreamToggle = async (value: boolean): Promise<void> => {
@@ -100,18 +142,57 @@ export function SettingsPage(): React.JSX.Element {
           </div>
         </div>
 
-        <Row label="Model">
+        <Row label="Provider">
           <PillGroup>
-            {models.map((m) => (
+            <Pill active={provider === 'anthropic'} onClick={() => handleProviderChange('anthropic')} title="Anthropic Claude API">
+              Anthropic
+            </Pill>
+            <Pill active={provider === 'ollama'} onClick={() => handleProviderChange('ollama')} title="Local Ollama instance">
+              Ollama
+            </Pill>
+          </PillGroup>
+        </Row>
+
+        {provider === 'ollama' && (
+          <Row label="Ollama URL">
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={ollamaUrl}
+                onChange={(e) => setOllamaUrl(e.target.value)}
+                onBlur={() => handleOllamaUrlChange(ollamaUrl)}
+                onKeyDown={(e) => { if (e.key === 'Enter') handleOllamaUrlChange(ollamaUrl) }}
+                className="bg-zinc-800/80 border border-zinc-700/50 rounded-md px-2 py-1 text-xs text-zinc-300 font-mono w-52 focus:outline-none focus:border-zinc-500"
+                placeholder="http://localhost:11434"
+              />
+              <button
+                type="button"
+                onClick={() => handleOllamaUrlChange(ollamaUrl)}
+                disabled={modelsLoading}
+                className="px-2 py-1 bg-zinc-800/80 hover:bg-zinc-700 border border-zinc-700/50 rounded-md text-[11px] text-zinc-400 hover:text-zinc-200 transition-colors disabled:opacity-40"
+              >
+                {modelsLoading ? 'Testing...' : 'Test'}
+              </button>
+            </div>
+          </Row>
+        )}
+
+        <div className="space-y-1 py-0.5">
+          <span className="text-sm text-zinc-300">Model</span>
+          <PillGroup>
+            {modelsLoading ? (
+              <span className="text-[11px] text-zinc-500">Loading models...</span>
+            ) : models.map((m) => (
               <Pill key={m.value} active={model === m.value} onClick={async () => {
                 await window.api.setConfig('model', m.value)
                 setModel(m.value)
               }} title={m.description}>
                 {m.label}
+                {m.description && <span className="text-[9px] opacity-50 ml-1">{m.description}</span>}
               </Pill>
             ))}
           </PillGroup>
-        </Row>
+        </div>
       </section>
 
       {/* WhatsApp */}
